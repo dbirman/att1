@@ -8,7 +8,7 @@
 % v21 DJ April 1, 2017. Added tcp ip connection settings
 
 
-function att1_computer_settings_dj_v22
+function att1_computer_settings_dan_v22
  
 global expsetup
 
@@ -21,7 +21,7 @@ global expsetup
 % expsetup.general.directory_baseline_data = 'C:\Users\Rig-E\Desktop\Experiments_data\';
 % expsetup.general.directory_baseline_data_server = 'Z:\data\RigE\Experiments_data\';
 expsetup.general.directory_baseline_code = '~/proj/experiments/';
-expsetup.general.directory_baseline_data = '~/proj/experiments_data/';
+expsetup.general.directory_baseline_data = '~/prpj/experiments_data/';
 
 
 % This is viewpix display

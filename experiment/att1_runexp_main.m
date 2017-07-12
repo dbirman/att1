@@ -58,6 +58,8 @@ if strcmp (expsetup.general.exp_location, 'dj')
     expsetup.general.code_computer_setup = sprintf('%s_computer_settings_dj_v22', expsetup.general.expname); % Path to file containing computer settings
 elseif strcmp (expsetup.general.exp_location, 'mbox')
     expsetup.general.code_computer_setup = sprintf('%s_computer_settings_mbox_v22', expsetup.general.expname); % Path to file containing computer settings
+elseif strcmp (expsetup.general.exp_location, 'dan')
+    expsetup.general.code_computer_setup = sprintf('%s_computer_settings_dan_v22', expsetup.general.expname); % Path to file containing computer settings
 elseif strcmp (expsetup.general.exp_location, 'unknown')
 else
     error ('Undefined exp location - could not find matching computer settings file')
