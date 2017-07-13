@@ -4,7 +4,7 @@
 %% Exp stage (either keep the same or change the task)
 
 if tid==1
-    expsetup.stim.epx_version_temp = 2; % Version to start with on the first trial
+    expsetup.stim.epx_version_temp = 5; % Version to start with on the first trial
     expsetup.stim.epx_version_update_next_trial = 0;
     fprintf('Task level is %.2f\n', expsetup.stim.epx_version_temp)
 elseif tid>1
@@ -19,7 +19,6 @@ elseif tid>1
     end
     fprintf('Task level is %.2f\n', b)
 end
-
 
 
 %% Determine whether task difficulty/level changes
@@ -40,12 +39,14 @@ if ~isempty(ind1)
     fprintf('Online stimulus updating: %d out of %d trials were correct\n', total1, expsetup.stim.trial_online_counter)
 end
 
-% Increase/decrease in stimulus property based on performance
+% Select variables to increase/decrease
 % No performance updating if exp_version_temp==1;
 if expsetup.stim.epx_version_temp~=1
     att1_trial_update_stimuli;
 end
 
+
+%% Change task difficulty/level
 
 %===============
 %===============
@@ -586,7 +587,7 @@ while loop_over==0
     %% If its the last frame, save few missing parameters & terminate
     
     % If run out of frames  - end trial (should never happen)
-    if c1_frame_index1==size(expsetup.stim.eframes_time,1)
+    if c1_frame_index1==size(expsetup.stim.eframes_time{tid},1)
         loop_over = 1;
     end
     
@@ -603,13 +604,13 @@ while loop_over==0
 end
 
 % Reduce trialmat in size (save only frames that are used)
-if c1_frame_index1+1<size(expsetup.stim.eframes_time,1)
+if c1_frame_index1+1<size(expsetup.stim.eframes_time{tid},1)
     f1 = fieldnames(expsetup.stim);
     ind = strncmp(f1,'eframes', 7);
     for i=1:numel(ind)
         if ind(i)==1
             if iscell(expsetup.stim.(f1{i}))
-                expsetup.stim.(f1{i}){tid}(c1_frame_index1+1,:,:) = [];
+                expsetup.stim.(f1{i}){tid}(c1_frame_index1+1:end,:,:) = [];
             end
         end
     end
@@ -664,18 +665,24 @@ Screen('FillRect', window, expsetup.stim.background_color);
 
 
 
-%% Start reward
+%% Online performance tracking
 
-% Check whether trial was correct
+% Check whether trial is counted towards online performance tracking. In
+% some cases correct trials can be discounted.
 
-if expsetup.stim.esetup_exp_version(tid,1) == 1 || expsetup.stim.esetup_exp_version(tid,1) == 2 || ...
-        expsetup.stim.esetup_exp_version(tid,1) == 3 || expsetup.stim.esetup_exp_version(tid,1) == 4
+if expsetup.stim.esetup_exp_version(tid,1) <=5
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
-        expsetup.stim.edata_trial_online_counter(tid,1) = 1;
+        % If previous trial was an error and this is a repeat - discount this trial from tracking
+        if strcmp(expsetup.stim.edata_error_code{tid}, 'probe response error') && expsetup.stim.trial_error_repeat==1
+            expsetup.stim.edata_trial_online_counter(tid,1) = 99;
+        else
+            expsetup.stim.edata_trial_online_counter(tid,1) = 1;
+        end
     elseif strcmp(expsetup.stim.edata_error_code{tid}, 'probe response error')
         expsetup.stim.edata_trial_online_counter(tid,1) = 2;
     end
 end
+
 
 
 % % Plot reward image onscreen

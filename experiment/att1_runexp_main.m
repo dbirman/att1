@@ -5,7 +5,7 @@ close all;
 clear all;
 clc;
 
-fprintf ('\nRun experiment file used is V2.0, update as of April 19, 2017\n\n')
+fprintf ('\nRun experiment file used is V2.1, update as of April 19, 2017\n\n')
  
 global expsetup
 global ni

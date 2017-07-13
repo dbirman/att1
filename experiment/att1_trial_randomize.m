@@ -24,7 +24,7 @@ end
 
 %% Which exp version is running?
 
-expsetup.stim.esetup_exp_version(tid,1) = expsetup.stim.epx_version_temp;
+expsetup.stim.esetup_exp_version(tid,1) = expsetup.stim.exp_version_temp;
 
 %%  Fix
 

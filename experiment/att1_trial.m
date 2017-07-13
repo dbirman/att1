@@ -4,22 +4,21 @@
 %% Exp stage (either keep the same or change the task)
 
 if tid==1
-    expsetup.stim.epx_version_temp = 5; % Version to start with on the first trial
-    expsetup.stim.epx_version_update_next_trial = 0;
-    fprintf('Task level is %.2f\n', expsetup.stim.epx_version_temp)
+    expsetup.stim.exp_version_temp = 5; % Version to start with on the first trial
+    expsetup.stim.exp_version_update_next_trial = 0;
+    fprintf('Task level is %.2f\n', expsetup.stim.exp_version_temp)
 elseif tid>1
-    if expsetup.stim.epx_version_update_next_trial == 0 % Keep the same
+    if expsetup.stim.exp_version_update_next_trial == 0 % Keep the same
         b = expsetup.stim.esetup_exp_version(tid-1,1);
-        expsetup.stim.epx_version_temp = b;
-    elseif expsetup.stim.epx_version_update_next_trial == 1 % Change the task
+        expsetup.stim.exp_version_temp = b;
+    elseif expsetup.stim.exp_version_update_next_trial == 1 % Change the task
         a = expsetup.stim.esetup_exp_version(tid-1,1); % Take previous trial exp version
         b = expsetup.stim.training_stage_matrix (expsetup.stim.training_stage_matrix<a); % Other available exp versions
         b = b(end);
-        expsetup.stim.epx_version_temp = b; % Take largest available number (smallest number is end of training)
+        expsetup.stim.exp_version_temp = b; % Take largest available number (smallest number is end of training)
     end
     fprintf('Task level is %.2f\n', b)
 end
-
 
 
 %% Determine whether task difficulty/level changes
@@ -40,17 +39,19 @@ if ~isempty(ind1)
     fprintf('Online stimulus updating: %d out of %d trials were correct\n', total1, expsetup.stim.trial_online_counter)
 end
 
-% Increase/decrease in stimulus property based on performance
+% Select variables to increase/decrease
 % No performance updating if exp_version_temp==1;
-if expsetup.stim.epx_version_temp~=1
+if expsetup.stim.exp_version_temp~=1
     att1_trial_update_stimuli;
 end
 
 
+%% Change task difficulty/level
+
 %===============
 %===============
 % A - if not enough trials collected
-if isempty(ind1) && expsetup.stim.epx_version_temp~=1
+if isempty(ind1) && expsetup.stim.exp_version_temp~=1
     
     % Start of experiment uses default values
     for i = 1:numel(tv1)
@@ -66,7 +67,7 @@ if isempty(ind1) && expsetup.stim.epx_version_temp~=1
     %===============
     %===============
     % B - If performance is good, update stimulus from previous trial to make task harder
-elseif ~isempty(ind1) && total1 >= expsetup.stim.trial_correct_goal_up && expsetup.stim.epx_version_temp~=1
+elseif ~isempty(ind1) && total1 >= expsetup.stim.trial_correct_goal_up && expsetup.stim.exp_version_temp~=1
     
     % Select stim property and change it
     for i = 1:numel(tv1)
@@ -96,7 +97,7 @@ elseif ~isempty(ind1) && total1 >= expsetup.stim.trial_correct_goal_up && expset
     %===============
     %===============
     % C - If performance is bad, update stimulus from previous to make task easier
-elseif ~isempty(ind1) && total2 >= expsetup.stim.trial_correct_goal_down && expsetup.stim.epx_version_temp~=1
+elseif ~isempty(ind1) && total2 >= expsetup.stim.trial_correct_goal_down && expsetup.stim.exp_version_temp~=1
     
     % Select stim property and change it
     for i = 1:numel(tv1)
@@ -126,7 +127,7 @@ elseif ~isempty(ind1) && total2 >= expsetup.stim.trial_correct_goal_down && exps
     %===============
     %===============
     % D - If not enough of trials, copy values from earlier trial
-elseif ~isempty(ind1) && total1 < expsetup.stim.trial_correct_goal_up && total2 < expsetup.stim.trial_correct_goal_down && expsetup.stim.epx_version_temp~=1
+elseif ~isempty(ind1) && total1 < expsetup.stim.trial_correct_goal_up && total2 < expsetup.stim.trial_correct_goal_down && expsetup.stim.exp_version_temp~=1
     
     % Select stim property and change it
     for i = 1:numel(tv1)
@@ -147,20 +148,20 @@ end
 % Make a decision whether to change the task level on next trial
 
 % If stimulus reached the value selected, then stop updating it
-if ~isempty(ind1) && expsetup.stim.epx_version_temp~=1
+if ~isempty(ind1) && expsetup.stim.exp_version_temp~=1
     i=numel(tv1);
     if tv1(i).temp_var_current==tv1(i).temp_var_final
-        expsetup.stim.epx_version_update_next_trial = 1;
+        expsetup.stim.exp_version_update_next_trial = 1;
         % Print output onscreen
         a = expsetup.stim.esetup_exp_version(tid-1,1); % Take previous trial exp version
         b = expsetup.stim.training_stage_matrix (expsetup.stim.training_stage_matrix<a); % Other available exp versions
         b = b(end); % Take largest available number (smallest number is end of training)
         fprintf('Task criterion reached, on next trial will change task from level %.2f to level %.2f\n', a, b)
     elseif tv1(i).temp_var_current~=tv1(i).temp_var_final
-        expsetup.stim.epx_version_update_next_trial = 0;
+        expsetup.stim.exp_version_update_next_trial = 0;
     end
-elseif expsetup.stim.epx_version_temp==1 % Never change the task for final level
-    expsetup.stim.epx_version_update_next_trial = 0;
+elseif expsetup.stim.exp_version_temp==1 % Never change the task for final level
+    expsetup.stim.exp_version_update_next_trial = 0;
 end
 
 
@@ -664,17 +665,24 @@ Screen('FillRect', window, expsetup.stim.background_color);
 
 
 
-%% Start reward
+%% Online performance tracking
 
-% Check whether trial was correct
+% Check whether trial is counted towards online performance tracking. In
+% some cases correct trials can be discounted.
 
 if expsetup.stim.esetup_exp_version(tid,1) <=5
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
-        expsetup.stim.edata_trial_online_counter(tid,1) = 1;
+        % If previous trial was an error and this is a repeat - discount this trial from tracking
+        if strcmp(expsetup.stim.edata_error_code{tid}, 'probe response error') && expsetup.stim.trial_error_repeat==1
+            expsetup.stim.edata_trial_online_counter(tid,1) = 99;
+        else
+            expsetup.stim.edata_trial_online_counter(tid,1) = 1;
+        end
     elseif strcmp(expsetup.stim.edata_error_code{tid}, 'probe response error')
         expsetup.stim.edata_trial_online_counter(tid,1) = 2;
     end
 end
+
 
 
 % % Plot reward image onscreen

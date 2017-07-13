@@ -5,7 +5,7 @@
 
 %% Different training stages have different stim durations
 
-stim.training_stage_matrix = [1,2,3,4]; % Different levels of task difficulty. Select to use one.
+stim.training_stage_matrix = [1,2,3,4,5]; % Different levels of task difficulty. Select to use one.
 
 % Training stage 1.0
 % Is final stage. No changes to the code
@@ -139,7 +139,6 @@ end
 %==============
 % Screen colors
 stim.background_color = [127, 127, 127];
-
 
 %===============
 % Duration of trials
