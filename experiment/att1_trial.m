@@ -1,5 +1,6 @@
 % Here all displays presented
 
+window = expsetup.screen.window;
 
 %% Exp stage (either keep the same or change the task)
 
@@ -46,7 +47,7 @@ if expsetup.stim.exp_version_temp~=1
 end
 
 
-%% Change task difficulty/level
+% Change task difficulty/level
 
 %===============
 %===============
@@ -165,13 +166,10 @@ elseif expsetup.stim.exp_version_temp==1 % Never change the task for final level
 end
 
 
-
 %% PREPARE ALL OBJECTS AND FRAMES TO BE DRAWN:
 
-window = expsetup.screen.window;
-
-% On first trial, run randomization before trial starts
-% From second trial track performance
+% In this case, randomization is done on each trial. Alternatively, all exp
+% mat could be preset on first trial.
 if tid == 1
     att1_trial_randomize;
 elseif tid>1
@@ -195,15 +193,12 @@ if expsetup.general.recordeyes==1
     WaitSecs(0.1);  % Record a few samples before we actually start displaying
 end
 
-% % SEND MESSAGE WITH TRIAL ID TO EYELINK
-% if expsetup.general.recordeyes==1
-%     a1 = em_blockno;
-%     t1=length(find(expsetup.stim.expmatrix(:,a1)<expsetup.stim.expmatrix(tid,a1)));
-%     trial_current=tid-t1; % Which trial of the current block it is?
-%     trial_perblock=length(find(expsetup.stim.expmatrix(:,a1)==expsetup.stim.expmatrix(tid,a1))); % How many trials in this block?
-%     msg1 = sprintf('Trial %i/%i in the block %i/%i', trial_current, trial_perblock, expsetup.stim.expmatrix(tid,a1), max(expsetup.stim.expmatrix(:,a1)) );
-%     Eyelink('Command', 'record_status_message ''%s'' ', msg1);
-% end
+% SEND MESSAGE WITH TRIAL ID TO EYELINK
+if expsetup.general.recordeyes==1
+    trial_current=tid; % Which trial of the current block it is?
+    msg1 = sprintf('Trial %i', trial_current);
+    Eyelink('Command', 'record_status_message ''%s'' ', msg1);
+end
 
 
 %% ================
@@ -860,28 +855,10 @@ end
 %
 
 
-%
-% % Save error done in the trial
-% expsetup.stim.expmatrix(tid, em_data_reject) = loop_error; % Save error
-% if loop_error==0
-%     expsetup.stim.expmatrix(tid, em_data_reject) = 99; % Code for unknown errors
-% end
-%
-
-
-
 %% Trigger new trial
 
 Screen('FillRect', window, expsetup.stim.background_color);
 Screen('Flip', window);
-
-
-% %% Plot online data
-%
-% % If plexon recording exists, get spikes
-% if expsetup.general.record_plexon == 1 && expsetup.general.plexon_online_spikes == 1
-%     look2_online_spikes;
-% end
 
 
 if expsetup.general.record_plexon == 0
