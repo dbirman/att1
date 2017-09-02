@@ -1,11 +1,15 @@
 % Script running main experiment file. Initializes and closes all devices.
 % V2.1 Update as of May 16, 2017
+% V2.2 July 15, 2017: Improved compatability with new framework
+% V2.3 August 19, 2017: Finished compatibility with new framework
+% V2.4 August 23, 2017: Added helper functions folder to the path
+
 
 close all;
 clear all;
 clc;
 
-fprintf ('\nRun experiment file used is V2.1, update as of April 19, 2017\n\n')
+fprintf ('\nRun experiment file used is V2.4, update as of August 23, 2017\n\n')
  
 global expsetup
 global ni
@@ -13,7 +17,7 @@ global ni
 %% General settings to run the code
 
 expsetup.general.expname = 'att1';
-expsetup.general.exp_location = 'dj'; % 'dj'; 'mbox'
+expsetup.general.exp_location = 'dj'; % 'dj'; 'mbox'; 'dan'; 'edoras'; 'citadel';
 expsetup.general.debug = 2; % 0: default; 1: reward off, eyelink off; 2: reward off, eyelink off, display transparent
 
 % Devices and routines
@@ -54,16 +58,9 @@ end
 
 
 % Get file name for computer settings
-if strcmp (expsetup.general.exp_location, 'dj')
-    expsetup.general.code_computer_setup = sprintf('%s_computer_settings_dj_v22', expsetup.general.expname); % Path to file containing computer settings
-elseif strcmp (expsetup.general.exp_location, 'mbox')
-    expsetup.general.code_computer_setup = sprintf('%s_computer_settings_mbox_v22', expsetup.general.expname); % Path to file containing computer settings
-elseif strcmp (expsetup.general.exp_location, 'dan')
-    expsetup.general.code_computer_setup = sprintf('%s_computer_settings_dan_v22', expsetup.general.expname); % Path to file containing computer settings
-elseif strcmp (expsetup.general.exp_location, 'unknown')
-else
-    error ('Undefined exp location - could not find matching computer settings file')
-end
+n1 = sprintf('%s_computer_settings_v22_%s', expsetup.general.expname, expsetup.general.exp_location);
+expsetup.general.code_computer_setup = n1; % Path to file containing computer settings
+ 
 
 % Plexon events
 if expsetup.general.plexon_online_spikes == 1 % Get channel number used in the recording
@@ -118,7 +115,33 @@ expsetup.eyecalib.reward_ms = 100; % How long reward lasts
 
 %% Initialize all computer specific settings
 
-eval(expsetup.general.code_computer_setup)
+a = mfilename('fullpath');
+
+% Create a path to computer settings file
+if ismac
+    del1 = '/';
+else
+    del1 = '\';
+end
+C = strsplit(a,del1);
+if numel(C)>1
+    b = [];
+    for i = 1:numel(C)-1
+        if ~isempty(C{i})
+            b = [b,del1,C{i}];
+        end
+        if i == numel(C)-1
+            b = [b, del1, expsetup.general.code_computer_setup];
+        end
+    end
+end
+
+% Check if computer settings exists
+if exist(b, 'file')==2
+    eval(expsetup.general.code_computer_setup)
+else
+    error ('Could not find matching computer settings file')
+end
 
 
 %% Add the folder with experimental code to the path
@@ -130,6 +153,11 @@ else
     error ('Experiment name specified does not exist')
 end
 
+if isdir(expsetup.general.directory_helper_functions)
+    addpath(genpath(expsetup.general.directory_helper_functions));
+else
+    error ('Helper functions folder not added')
+end
 
 %% Create directories for data recording (main file)
 
@@ -154,7 +182,7 @@ end
 
 % Initialize folder where eyelink data is stored
 expsetup.general.directory_data_eyelink_edf = [expsetup.general.directory_baseline_data, expsetup.general.expname, '/data_eyelink_edf/', expsetup.general.subject_id, '/'];
-expsetup.general.directory_data_eyelink_asc = [expsetup.general.directory_baseline_data, expsetup.general.expname, '/data_temp1/', expsetup.general.subject_id, '/'];
+expsetup.general.directory_data_eyelink_asc = [expsetup.general.directory_baseline_data, expsetup.general.expname, '/data_temp_1/', expsetup.general.subject_id, '/'];
 if ~isdir (expsetup.general.directory_data_eyelink_edf)
     mkdir(expsetup.general.directory_data_eyelink_edf);
 end
@@ -463,9 +491,10 @@ while endexp1==0
                 char=char{1};
             end
             if strcmp(char,'space')
+                % Manual calibration (monkeys)
                 runexp_eyelink_calib_primate_v14;
                 %===========
-                % Automated calibration
+                % Automated calibration (humans)
                 % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
             end
         end
@@ -481,11 +510,8 @@ while endexp1==0
 
         % Run trials
         fprintf('\nTrial number is %i\n', tid);
-        eval(expsetup.general.code_trial)
-        
-%         if tid>1
-%             fprintf('Trial duration was %i ms \n', round((GetSecs-time_tstart_1)*1000))
-%         end
+        eval(expsetup.general.code_trial)        
+
         
         % Save data structure if more than tno trials were run (does not save early terminations)
         if tid>tno1
@@ -494,7 +520,7 @@ while endexp1==0
             d1 = sprintf('%s%s', dir1, f_name);
             save (d1, 'expsetup');
         end
-        
+       
     catch
         
         fprintf('\nCrashed on trial %i\n\n', tid);
@@ -522,13 +548,11 @@ while endexp1==0
             ShowCursor;
         end
         
-%         % Show reward and number of trials completed
-%         if expsetup.general.reward_on>0
-%             reward_given = nansum(expsetup.stim.expmatrix(:, em_data_reward_size_ml));
-%             fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
-%         end
-%         index1 = expsetup.stim.expmatrix(:, em_data_reject) == 1;
-%         fprintf ('\nNumber of correct trials completed: %i \n', sum(index1))
+        % Show reward and number of trials completed
+        if expsetup.general.reward_on>0
+            reward_given = nansum(expsetup.stim.edata_reward_size_ml);
+            fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
+        end
         
         % Close the audio device
         if expsetup.general.psychaudio == 1 && ~isempty(expsetup.audio.handle)
@@ -569,10 +593,10 @@ while endexp1==0
             char=char{1};
         end
         if strcmp(char,'space')
-            % Manual calibration
+            % Manual calibration (monkeys)
             runexp_eyelink_calib_primate_v14;
             %===========
-            % Automated calibration
+            % Automated calibration (humans)
             % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
         end
     end
@@ -599,10 +623,15 @@ while endexp1==0
         end
     end
     
-% % % % %     if tid==size(expsetup.stim.expmatrix,1)
-% % % % %         endexp1=1;
-% % % % %     end
-    tid=tid+1;
+    % Terminate experiment?
+    if expsetup.stim.end_experiment==1
+        endexp1=1;
+    end
+    
+   % Terminate experiment?
+    if expsetup.stim.end_experiment==1
+        endexp1=1;
+    end
     
     if ismac
         ListenChar(0); % 1 turns the keyboard back on
@@ -716,13 +745,11 @@ end
 
 %% Print some statistics
 
-% time_expend = GetSecs;
-% fprintf ('\nExperiment duration %d minutes\n', ceil((time_expend-time_expstart)/60))
-% 
-% if expsetup.general.reward_on>0
-%     reward_given = nansum(expsetup.stim.expmatrix(:, em_data_reward_size_ml));
-%     fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
-% end
-% index1 = expsetup.stim.expmatrix(:, em_data_reject) == 1;
-% fprintf ('\nNumber of correct trials completed: %i \n', sum(index1))
+time_expend = GetSecs;
+fprintf ('\nExperiment duration %d minutes\n', ceil((time_expend-time_expstart)/60))
 
+% Show reward and number of trials completed
+if expsetup.general.reward_on>0
+    reward_given = nansum(expsetup.stim.edata_reward_size_ml);
+    fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
+end
