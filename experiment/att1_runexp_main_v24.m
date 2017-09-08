@@ -147,6 +147,7 @@ end
 %% Add the folder with experimental code to the path
 
 expsetup.general.directory_experiment_code = [expsetup.general.directory_baseline_code, expsetup.general.expname, '/experiment/'];
+expsetup.general.directory_helper_functions = [expsetup.general.directory_baseline_code, expsetup.general.expname, '/helper_functions/'];
 if isdir (expsetup.general.directory_experiment_code)
     addpath (expsetup.general.directory_experiment_code);
 else
@@ -428,329 +429,328 @@ try
 end
 
 
-% %% Initialize eye-tracker recording
-% % It is necessary that display is initialized beforehand (eyetracker needs display coordinates)
-% 
-% if expsetup.general.recordeyes == 2
-%     fprintf ('\n')
-%     eyelink_selection=input('Is this an eyetracking experiment? "y" - yes, "n" - no: ', 's');
-%     fprintf ('\n')
-%     if strcmp(eyelink_selection, 'y')
-%         expsetup.general.recordeyes=1;
-%     else
-%         expsetup.general.recordeyes=0;
-%     end
-% end
-% 
-% if expsetup.general.recordeyes == 1
-%     runexp_eyelink_ini_v11
-% end
-% 
-% 
-% %%  RUN THE EXPERIMENT
-% 
-% % Initialize experimental matrix
-% eval(expsetup.general.code_settings)
-% 
-% time_expstart = GetSecs;
-% 
-% % Run the loop
-% tid=1; % tid = Trial ID (for example, 2nd out of 100 trials)
-% endexp1=0;
-% 
-% while endexp1==0
-%     
-%     if ismac
-%         ListenChar(2); % 2 turns the keyboard output to matlab
-%     end
-%     
-%     char = expsetup.general.empty_key; % Easy way to get rid of keyboard presses recorded before each trial
-%     tno1 = expsetup.general.trials_before_saving; % How many trials to run before saving data
-%     
-%     % Hide or show cursor
-%     if expsetup.general.hidecursor == 2
-%         HideCursor;
-%     end
-%     
-%     % Show welcome pic
-%     if expsetup.general.code_instruction_on == 1
-%         if tid==1
-%             instr_pic = 'image_welcome';
-%             runexp_instruction_v10(instr_pic, 1);
-%         end
-%     end
-%    
-%     
-%     % Calibrate (on first trial or on each block)
-%     if tid==1
-%         if expsetup.general.recordeyes == 1
-%             fprintf ('\n\nUse "space"  to initialize calibration\n')
-%             instr_pic = 'image_calibration';
-%             char = runexp_instruction_v10(instr_pic, 1);
-%             if iscell(char)
-%                 char=char{1};
-%             end
-%             if strcmp(char,'space')
-%                 runexp_eyelink_calib_primate_v14;
-%                 %===========
-%                 % Automated calibration
-%                 % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
-%             end
-%         end
-%     end
-%     
-%     %================
-%     %================
-%     %================
-%     % Run trials loop
-%     try
-%         
-%         time_tstart_1 = GetSecs;
-% 
-%         % Run trials
-%         fprintf('\nTrial number is %i\n', tid);
-%         eval(expsetup.general.code_trial)
-%         
-% %         if tid>1
-% %             fprintf('Trial duration was %i ms \n', round((GetSecs-time_tstart_1)*1000))
-% %         end
-%         
-%         % Save data structure if more than tno trials were run (does not save early terminations)
-%         if tid>tno1
-%             dir1 = expsetup.general.directory_data_psychtoolbox_subject;
-%             f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
-%             d1 = sprintf('%s%s', dir1, f_name);
-%             save (d1, 'expsetup');
-%         end
-%         
-%     catch
-%         
-%         fprintf('\nCrashed on trial %i\n\n', tid);
-%         
-%         % Save data structure if more than tno trials were run (does not save early terminations)
-%         if tid>tno1
-%             dir1 = expsetup.general.directory_data_psychtoolbox_subject;
-%             f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
-%             d1 = sprintf('%s%s', dir1, f_name);
-%             save (d1, 'expsetup');
-%         end
-%         
-%         % Save eyelink file
-%         if tid>tno1 && expsetup.general.recordeyes == 1
-%             directory1 = expsetup.general.directory_data_eyelink_edf_subject;
-%             runexp_eyelink_save_v10(directory1);
-%         end
-%         
-%         if ismac
-%             ListenChar(0); % 1 turns the keyboard back on
-%         end
-%         
-%         % Hide or show cursor
-%         if expsetup.general.hidecursor == 2
-%             ShowCursor;
-%         end
-%         
-% %         % Show reward and number of trials completed
-% %         if expsetup.general.reward_on>0
-% %             reward_given = nansum(expsetup.stim.expmatrix(:, em_data_reward_size_ml));
-% %             fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
-% %         end
-% %         index1 = expsetup.stim.expmatrix(:, em_data_reject) == 1;
-% %         fprintf ('\nNumber of correct trials completed: %i \n', sum(index1))
-%         
-%         % Close the audio device
-%         if expsetup.general.psychaudio == 1 && ~isempty(expsetup.audio.handle)
-%             PsychPortAudio('Close', expsetup.audio.handle);
-%             fprintf ('\nClosed Psychtoolbox Sound device\n')
-%             expsetup.audio.handle = [];
-%         end 
-%         % This section is executed in case an error happens in the
-%         % experiment code implemented between try and catch...
-%         Screen('CloseAll')
-%         rethrow(lasterror);
-%         
-%     end
-%     
-%     
-%     %================
-%     %================
-%     %================
-%     
-%     % Check for keyboard whether to stop experiment
-%     if strcmp(char, expsetup.general.empty_key)
-%         [keyIsDown,timeSecs,keyCode] = KbCheck;
-%         char = KbName(keyCode);
-%         % Catch potential press of two buttons
-%         if iscell(char)
-%             char=char{1};
-%         end
-%     else
-%         char=char;
-%     end
-%     
-%     % Calibrate (upon button press)
-%     if strcmp(char,'c') && expsetup.general.recordeyes == 1
-%         fprintf ('\n\nUse "space"  to initialize calibration\n')
-%         instr_pic = 'image_calibration';
-%         char = runexp_instruction_v10(instr_pic, 1);
-%         if iscell(char)
-%             char=char{1};
-%         end
-%         if strcmp(char,'space')
-%             % Manual calibration
-%             runexp_eyelink_calib_primate_v14;
-%             %===========
-%             % Automated calibration
-%             % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
-%         end
-%     end
-%     
-%     % Pause
-%     if tid>1
-%         if strcmp(char,'p') 
-%             fprintf ('\n\nPaused, press any key to continue\n')
-%             instr_pic = 'image_pause';
-%             runexp_instruction_v10(instr_pic, 1);
-%         end
-%     end
-%     
-%     % Forced experiment termination
-%     if strcmp(char, expsetup.general.quit_key)
-%         instr_pic = 'image_quit';
-%         fprintf('\nWant to terminate experiment? Type in letter "y" \n')
-%         char = runexp_instruction_v10(instr_pic, 1);
-%         if iscell(char)
-%             char=char{1};
-%         end
-%         if char == 'y'
-%             endexp1=1;
-%         end
-%     end
-%     
-% % % % % %     if tid==size(expsetup.stim.expmatrix,1)
-% % % % % %         endexp1=1;
-% % % % % %     end
-%     tid=tid+1;
-%     
-%     if ismac
-%         ListenChar(0); % 1 turns the keyboard back on
-%     end
-%     
-% end
-% 
-% %================
-% %================
-% %================
-% 
-% 
-% %% CLOSING OF SCREENS AND SOUNDS
-% 
-% % Show experiment over pic
-% if expsetup.general.code_instruction_on == 1
-%     instr_pic = 'image_over';
-%     runexp_instruction_v10(instr_pic);
-% end
-% 
-% % Close the audio device
-% if expsetup.general.psychaudio == 1 && ~isempty(expsetup.audio.handle)
-%     PsychPortAudio('Close', expsetup.audio.handle);
-%     fprintf ('\nClosed Psychtoolbox Sound device\n')
-%     expsetup.audio.handle = [];
-% end
-% 
-% 
-% % Hide or show cursor
-% if expsetup.general.hidecursor == 2
-%     ShowCursor;
-% end
-% 
-% 
-% % Save data structure if more than tno trials were run (does not save early terminations)
-% if tid>tno1
-%     dir1 = expsetup.general.directory_data_psychtoolbox_subject;
-%     f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
-%     d1 = sprintf('%s%s', dir1, f_name);
-%     save (d1, 'expsetup');
-% end
-% 
-% % Save eyelink file
-% if tid>tno1 && expsetup.general.recordeyes == 1
-%     directory1 = expsetup.general.directory_data_eyelink_edf_subject;
-%         runexp_eyelink_save_v10(directory1);
-% end
-% 
-%        
-% fprintf('\nSettings successfully saved in directory %s\n', expsetup.general.directory_data_psychtoolbox_subject)
-% Screen('CloseAll');
-% 
-% 
-% %% CONVERSION OF EYETRACKER DATA
-% 
-% if expsetup.general.convert_edf == 1
-%     try
-%         if tid>tno1 && expsetup.general.recordeyes == 1
-%             
-%             fprintf ('\nConversion of edf2asc is going on, do not quit MALTAB\n')
-%             
-%             % Select folders for data saving
-%             cdDir_edf=expsetup.general.directory_data_eyelink_edf_subject;
-%             cdDir_asc=expsetup.general.directory_data_eyelink_asc_subject;
-%             cdDir_file = expsetup.general.subject_filename;
-%             %====================
-%             
-%             if ismac
-%                 
-%                 % Add edf2asc in /bin folder; use the file from
-%                 % /Applications/EyeLink/EDF_Access_API/Example/
-%                 
-%                 % Change to edf directory
-%                 cd(cdDir_edf)
-%                 
-%                 % create .dat file
-%                 system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -s -miss -1.0 -y']);
-%                 % Convert .asc file into .dat file and move it
-%                 movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.dat',cdDir_asc,cdDir_file))
-%                 
-%                 % Create .asc file
-%                 system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -e -y']);
-%                 % Move .asc file
-%                 movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.asc',cdDir_asc,cdDir_file))
-%                 
-%             elseif ispc
-%                 
-%                 % Tell the path to edf2asc program file
-%                 edf2asc_path = expsetup.general.edf2asc_path;
-%                 edf2asc = edf2asc_path;
-%                 
-%                 % Change to edf directory
-%                 cd(cdDir_edf)
-%                 
-%                 % create .dat file
-%                 system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -s -miss -1.0 -y']);
-%                 % Convert .asc file into .dat file and move it
-%                 movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.dat',cdDir_asc,cdDir_file))
-%                 
-%                 % Create .asc file
-%                 system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -e -y']);
-%                 % Move .asc file
-%                 movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.asc',cdDir_asc,cdDir_file))
-%                 
-%             end
-%             fprintf ('\nDone with eyelink data conversion\n')
-%         end
-%     end
-% end
-% 
-% 
-% %% Print some statistics
-% 
-% % time_expend = GetSecs;
-% % fprintf ('\nExperiment duration %d minutes\n', ceil((time_expend-time_expstart)/60))
-% % 
-% % if expsetup.general.reward_on>0
-% %     reward_given = nansum(expsetup.stim.expmatrix(:, em_data_reward_size_ml));
-% %     fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
-% % end
-% % index1 = expsetup.stim.expmatrix(:, em_data_reject) == 1;
-% % fprintf ('\nNumber of correct trials completed: %i \n', sum(index1))
-% 
+%% Initialize eye-tracker recording
+% It is necessary that display is initialized beforehand (eyetracker needs display coordinates)
+
+if expsetup.general.recordeyes == 2
+    fprintf ('\n')
+    eyelink_selection=input('Is this an eyetracking experiment? "y" - yes, "n" - no: ', 's');
+    fprintf ('\n')
+    if strcmp(eyelink_selection, 'y')
+        expsetup.general.recordeyes=1;
+    else
+        expsetup.general.recordeyes=0;
+    end
+end
+
+if expsetup.general.recordeyes == 1
+    runexp_eyelink_ini_v11
+end
+
+
+%%  RUN THE EXPERIMENT
+
+% Initialize experimental matrix
+eval(expsetup.general.code_settings)
+
+time_expstart = GetSecs;
+
+% Run the loop
+tid=1; % tid = Trial ID (for example, 2nd out of 100 trials)
+endexp1=0;
+
+while endexp1==0
+    
+    if ismac
+        ListenChar(2); % 2 turns the keyboard output to matlab
+    end
+    
+    char = expsetup.general.empty_key; % Easy way to get rid of keyboard presses recorded before each trial
+    tno1 = expsetup.general.trials_before_saving; % How many trials to run before saving data
+    
+    % Hide or show cursor
+    if expsetup.general.hidecursor == 2
+        HideCursor;
+    end
+    
+    % Show welcome pic
+    if expsetup.general.code_instruction_on == 1
+        if tid==1
+            instr_pic = 'image_welcome';
+            runexp_instruction_v10(instr_pic, 1);
+        end
+    end
+   
+    
+    % Calibrate (on first trial or on each block)
+    if tid==1
+        if expsetup.general.recordeyes == 1
+            fprintf ('\n\nUse "space"  to initialize calibration\n')
+            instr_pic = 'image_calibration';
+            char = runexp_instruction_v10(instr_pic, 1);
+            if iscell(char)
+                char=char{1};
+            end
+            if strcmp(char,'space')
+                % Manual calibration (monkeys)
+                runexp_eyelink_calib_primate_v14;
+                %===========
+                % Automated calibration (humans)
+                % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
+            end
+        end
+    end
+    
+    %================
+    %================
+    %================
+    % Run trials loop
+    try
+        
+        time_tstart_1 = GetSecs;
+
+        % Run trials
+        fprintf('\nTrial number is %i\n', tid);
+        eval(expsetup.general.code_trial)        
+
+        
+        % Save data structure if more than tno trials were run (does not save early terminations)
+        if tid>tno1
+            dir1 = expsetup.general.directory_data_psychtoolbox_subject;
+            f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
+            d1 = sprintf('%s%s', dir1, f_name);
+            save (d1, 'expsetup');
+        end
+       
+    catch
+        
+        fprintf('\nCrashed on trial %i\n\n', tid);
+        
+        % Save data structure if more than tno trials were run (does not save early terminations)
+        if tid>tno1
+            dir1 = expsetup.general.directory_data_psychtoolbox_subject;
+            f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
+            d1 = sprintf('%s%s', dir1, f_name);
+            save (d1, 'expsetup');
+        end
+        
+        % Save eyelink file
+        if tid>tno1 && expsetup.general.recordeyes == 1
+            directory1 = expsetup.general.directory_data_eyelink_edf_subject;
+            runexp_eyelink_save_v10(directory1);
+        end
+        
+        if ismac
+            ListenChar(0); % 1 turns the keyboard back on
+        end
+        
+        % Hide or show cursor
+        if expsetup.general.hidecursor == 2
+            ShowCursor;
+        end
+        
+        % Show reward and number of trials completed
+        if expsetup.general.reward_on>0
+            reward_given = nansum(expsetup.stim.edata_reward_size_ml);
+            fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
+        end
+        
+        % Close the audio device
+        if expsetup.general.psychaudio == 1 && ~isempty(expsetup.audio.handle)
+            PsychPortAudio('Close', expsetup.audio.handle);
+            fprintf ('\nClosed Psychtoolbox Sound device\n')
+            expsetup.audio.handle = [];
+        end 
+        % This section is executed in case an error happens in the
+        % experiment code implemented between try and catch...
+        Screen('CloseAll')
+        rethrow(lasterror);
+        
+    end
+    
+    
+    %================
+    %================
+    %================
+    
+    % Check for keyboard whether to stop experiment
+    if strcmp(char, expsetup.general.empty_key)
+        [keyIsDown,timeSecs,keyCode] = KbCheck;
+        char = KbName(keyCode);
+        % Catch potential press of two buttons
+        if iscell(char)
+            char=char{1};
+        end
+    else
+        char=char;
+    end
+    
+    % Calibrate (upon button press)
+    if strcmp(char,'c') && expsetup.general.recordeyes == 1
+        fprintf ('\n\nUse "space"  to initialize calibration\n')
+        instr_pic = 'image_calibration';
+        char = runexp_instruction_v10(instr_pic, 1);
+        if iscell(char)
+            char=char{1};
+        end
+        if strcmp(char,'space')
+            % Manual calibration (monkeys)
+            runexp_eyelink_calib_primate_v14;
+            %===========
+            % Automated calibration (humans)
+            % EyelinkDoTrackerSetup(expsetup.eyelink); % Calibrate the eye tracker before each block
+        end
+    end
+    
+    % Pause
+    if tid>1
+        if strcmp(char,'p') 
+            fprintf ('\n\nPaused, press any key to continue\n')
+            instr_pic = 'image_pause';
+            runexp_instruction_v10(instr_pic, 1);
+        end
+    end
+    
+    % Forced experiment termination
+    if strcmp(char, expsetup.general.quit_key)
+        instr_pic = 'image_quit';
+        fprintf('\nWant to terminate experiment? Type in letter "y" \n')
+        char = runexp_instruction_v10(instr_pic, 1);
+        if iscell(char)
+            char=char{1};
+        end
+        if char == 'y'
+            endexp1=1;
+        end
+    end
+    
+    % Terminate experiment?
+    if expsetup.stim.end_experiment==1
+        endexp1=1;
+    end
+    
+    % Update trial number?
+    if endexp1~=1
+        tid=tid+1;
+    end
+    
+    if ismac
+        ListenChar(0); % 1 turns the keyboard back on
+    end
+    
+end
+
+%================
+%================
+%================
+
+
+%% CLOSING OF SCREENS AND SOUNDS
+
+% Show experiment over pic
+if expsetup.general.code_instruction_on == 1
+    instr_pic = 'image_over';
+    runexp_instruction_v10(instr_pic);
+end
+
+% Close the audio device
+if expsetup.general.psychaudio == 1 && ~isempty(expsetup.audio.handle)
+    PsychPortAudio('Close', expsetup.audio.handle);
+    fprintf ('\nClosed Psychtoolbox Sound device\n')
+    expsetup.audio.handle = [];
+end
+
+
+% Hide or show cursor
+if expsetup.general.hidecursor == 2
+    ShowCursor;
+end
+
+
+% Save data structure if more than tno trials were run (does not save early terminations)
+if tid>tno1
+    dir1 = expsetup.general.directory_data_psychtoolbox_subject;
+    f_name = sprintf( '%s%s', expsetup.general.subject_filename,  expsetup.general.data_structure_appendix);
+    d1 = sprintf('%s%s', dir1, f_name);
+    save (d1, 'expsetup');
+end
+
+% Save eyelink file
+if tid>tno1 && expsetup.general.recordeyes == 1
+    directory1 = expsetup.general.directory_data_eyelink_edf_subject;
+        runexp_eyelink_save_v10(directory1);
+end
+
+       
+fprintf('\nSettings successfully saved in directory %s\n', expsetup.general.directory_data_psychtoolbox_subject)
+Screen('CloseAll');
+
+
+%% CONVERSION OF EYETRACKER DATA
+
+if expsetup.general.convert_edf == 1
+    try
+        if tid>tno1 && expsetup.general.recordeyes == 1
+            
+            fprintf ('\nConversion of edf2asc is going on, do not quit MALTAB\n')
+            
+            % Select folders for data saving
+            cdDir_edf=expsetup.general.directory_data_eyelink_edf_subject;
+            cdDir_asc=expsetup.general.directory_data_eyelink_asc_subject;
+            cdDir_file = expsetup.general.subject_filename;
+            %====================
+            
+            if ismac
+                
+                % Add edf2asc in /bin folder; use the file from
+                % /Applications/EyeLink/EDF_Access_API/Example/
+                
+                % Change to edf directory
+                cd(cdDir_edf)
+                
+                % create .dat file
+                system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -s -miss -1.0 -y']);
+                % Convert .asc file into .dat file and move it
+                movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.dat',cdDir_asc,cdDir_file))
+                
+                % Create .asc file
+                system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -e -y']);
+                % Move .asc file
+                movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.asc',cdDir_asc,cdDir_file))
+                
+            elseif ispc
+                
+                % Tell the path to edf2asc program file
+                edf2asc_path = expsetup.general.edf2asc_path;
+                edf2asc = edf2asc_path;
+                
+                % Change to edf directory
+                cd(cdDir_edf)
+                
+                % create .dat file
+                system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -s -miss -1.0 -y']);
+                % Convert .asc file into .dat file and move it
+                movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.dat',cdDir_asc,cdDir_file))
+                
+                % Create .asc file
+                system(['edf2asc', ' ', sprintf('%s%s',cdDir_edf, cdDir_file),'.edf -e -y']);
+                % Move .asc file
+                movefile(sprintf('%s.asc',cdDir_file), sprintf('%s%s.asc',cdDir_asc,cdDir_file))
+                
+            end
+            fprintf ('\nDone with eyelink data conversion\n')
+        end
+    end
+end
+
+
+%% Print some statistics
+
+time_expend = GetSecs;
+fprintf ('\nExperiment duration %d minutes\n', ceil((time_expend-time_expstart)/60))
+
+% Show reward and number of trials completed
+if expsetup.general.reward_on>0
+    reward_given = nansum(expsetup.stim.edata_reward_size_ml);
+    fprintf ('\nAdministered reward %i milliliters\n', round(reward_given))
+end

@@ -2,7 +2,7 @@
 
 %% Blank variables
 
-t1 = expsetup.stim.esetup_fixation_acquire_duration(tid,1);
+t1 = expsetup.stim.esetup_lever_acquire_duration(tid,1);
 dur1 = t1 + 10; % How long the trial is
 time_unit = expsetup.screen.ifi;
 b1 = ceil(dur1/time_unit) + 1; % How many frames to initalize (always add extra frame at the end)
@@ -44,7 +44,7 @@ if length(m1)<size(temp1,1)
     temp1(ind,1) = m1(1:numel(ind));
 end
 % Save data
-expsetup.stim.eframes_fix_blink{tid}=temp1;
+expsetup.stim.eframes_fixation{tid}=temp1;
 
 
 %% Attention cue
@@ -64,7 +64,7 @@ expsetup.stim.eframes_att_cue_off_temp{tid}=temp1;
 
 % Probe + blank duration
 a = expsetup.stim.esetup_probe_duration(tid, 1);
-p_dur = ceil(a/time_unit); % Gavor
+p_dur = ceil(a/time_unit); % Gabor
 a = expsetup.stim.esetup_probe_isi(tid, 1);
 p_isi = ceil(a/time_unit); % Blank
 
@@ -99,37 +99,92 @@ a = a+1;
 expsetup.stim.eframes_probe_off_temp{tid}(a,1) = 1;
 
 
-%% Response ring stimulus
+%% Response ring size
 
-% Ring duration & size
-b1 = expsetup.stim.response_ring_duration; % How many ms ring lasts
+b1 = expsetup.stim.esetup_response_ring_duration(tid,1); % How many ms ring lasts
 b1 = round(b1/time_unit); % How many frames ring lasts
-a1 = round(expsetup.stim.response_ring_size_start); % Ring size max
-a2 = round(expsetup.stim.response_ring_size_end); % Ring size min
-m1_stim = linspace(a1, a2, b1); % Ring size for each frame
+a1 = round(expsetup.stim.esetup_response_ring_size_start(tid,1)); % Ring size max
+a2 = round(expsetup.stim.esetup_response_ring_size_end(tid,1)); % Ring size min
+
+% Ring size for each frame
+m1_stim = linspace(a1, a2, b1); 
 if size(m1_stim,2)>1 % Rotate if necessary
     m1_stim = m1_stim';
 end
 
-% Blank duration
+% Blank duration for each frame
 b1 = ceil((expsetup.stim.response_ring_isi)/time_unit);
 m1_isi = NaN(b1,1);
 
+%=================
+% Save ring size into matrix
+a = expsetup.stim.esetup_response_ring_sequence(tid,1:2);
+ind = ~isnan(a);
+
+if sum(ind)==0 % If no rings are shown
+    m1 = NaN;
+
+elseif sum(ind)>=1 % If only one ring is shown
+    
+    for i = 1:numel(ind)
+        if i==1
+            if ind(i)==1
+                m1 = [m1_stim; m1_isi];
+            else
+                m1 = [NaN((numel(m1_stim)),1); NaN(numel(m1_isi),1)];
+            end
+        elseif i>1
+            if ind(i)==1
+                m1 = [m1; m1_stim; m1_isi];
+            else
+                m1 = [m1; NaN((numel(m1_stim)),1); NaN(numel(m1_isi),1)];
+            end
+        end
+    end
+end
+
 % Save ring sizes into matrix
-m1 = [m1_stim; m1_isi; m1_stim; m1_isi]; % Ring + blank; 2 response rings shown
 if numel(m1)<=size(frames_mat,1)
     expsetup.stim.eframes_response_ring_size_temp{tid}(1:length(m1),1)=m1;
 else
     expsetup.stim.eframes_response_ring_size_temp{tid}(1:end,1)=m1(1:size(frames_mat,1));
 end
 
-% Save ring numbers into matrix
-% Shuffle whether ring 1 or ring 2 appears first
+%% Response ring durations
+
 a = expsetup.stim.esetup_response_ring_sequence(tid,1:2);
-m1 = [ones((numel(m1_stim)), 1)*a(1); zeros(numel(m1_isi),1);... % stim 1
-    ones((numel(m1_stim)), 1)*a(2); zeros(numel(m1_isi),1); NaN]; % stim 2
-m2 = [NaN(numel(m1),1)];
-m2(end) = 1; % Rings off
+ind = ~isnan(a);
+
+if sum(ind)==0 % If no rings are shown
+    m1 = NaN;
+    m2 = NaN;
+
+elseif sum(ind)>=1 % If 1 or more rings are shown
+    for i = 1:numel(ind)
+        if i==1
+            if ind(i)==1
+                m1 = [ones((numel(m1_stim)),1)*a(i); zeros(numel(m1_isi),1)];
+            else
+                m1 = [NaN((numel(m1_stim)),1); NaN(numel(m1_isi),1)];
+            end
+        elseif i>1
+            if ind(i)==1
+                m1 = [m1; ones((numel(m1_stim)),1)*a(i); zeros(numel(m1_isi),1)];
+            else
+                m1 = [m1; NaN((numel(m1_stim)),1); NaN(numel(m1_isi),1)];
+            end
+        end
+    end
+    m1(end+1)=NaN; % Add an extra element
+    
+    % Determine when last ring is shown
+    m2 = [NaN(numel(m1),1)];
+    a = find (m1>=0);
+    m2(a(end)+1) = 1; % Rings off
+    
+end
+
+% Save rings into frames matrix
 if numel(m1)<=size(frames_mat,1)
     expsetup.stim.eframes_response_ring_on_temp{tid}(1:length(m1),1) = m1;
     expsetup.stim.eframes_response_ring_off_temp{tid}(1:length(m1),1) = m2;
@@ -137,5 +192,6 @@ else
     expsetup.stim.eframes_response_ring_on_temp{tid}(1:end,1) = m1(1:size(frames_mat,1));
     expsetup.stim.eframes_response_ring_off_temp{tid}(end,1) = 1; % Save last frame as response ring offset
 end
+
 
 

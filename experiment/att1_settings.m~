@@ -26,48 +26,50 @@ stim.training_stage_matrix = {...
 
 stim.training_stage_matrix_numbers = 1:numel(stim.training_stage_matrix);
 
-% 'lever hold training' - train to hold the lever till object of given color appears
-% 'lever release on long ring' - release lever when ring appears (ring duration gets shorter)
-% 'lever release on big ring' - release lever when ring appears (ring gets smaller)
-% 'big target same orientation' - reduce gabor patch size
-% 'single target same orientation' - only trials with probe orientation same
-% 'single target orientation change' - only trials with probe orientation changes
-% 'distractor contrast change' - distractor contrast increases
-% 'distractor contrast stable' - distractor contrast stable - evaluate performance whether to go to next stage
-% 'decrease att cue length' - att cue gets shorter length
-% 'increase probe soa' - it becomes a memory task
-% 'final version'. No changes to the code.
+% Stage 'lever hold training' - train to hold the lever till object of given color appears
+% Stage 'lever release on long ring' - release lever when ring appears (ring duration gets shorter)
+% Stage 'lever release on big ring' - release lever when ring appears (ring gets smaller)
+% Stage 'single target same orientation' - only trials with probe orientation same
+% Stage 'single target orientation change' - only trials with probe orientation changes
+% Stage 'distractor contrast change' - distractor contrast increases
+% Stage 'distractor contrast stable' - distractor contrast stable - evaluate performance whether to go to next stage
+% Stage 'decrease att cue length' - att cue gets shorter length
+% Stage 'increase probe soa' - it becomes a memory task
+% Stage 'final version'. No changes to the code.
 
-% 'lever hold training'
+% Training stage 'lever hold training'
 stim.train_trial_duration_ini = 0.01;
-stim.train_trial_duration_ini_step = 2;
+stim.train_trial_duration_ini_step = 0.5;
 stim.train_trial_duration = 4;
 
-% 'lever release on long ring'
+% Training stage 'lever release on long ring'
 stim.response_ring_duration_ini = 5;
-stim.response_ring_duration_ini_step = -1;
+stim.response_ring_duration_ini_step = -0.2;
 
-% 'lever release on big ring'
-stim.response_ring_size_start_ini = 10;
-stim.response_ring_size_start_ini_step = -2;
-
-% 'big target same orientation'
-stim.att_stim_size_ini = 10;
-stim.att_stim_size_ini_step = -1;
-
-% 'distractor contrast change'
-stim.distractor_contrast_ini = 0.05;
-stim.distractor_contrast_ini_step = 0.05;
-
-% 'decrease att cue length
-stim.att_cue_length_ini = 7; % dva
-stim.att_cue_length_ini_step = -1; % decrease
-
-% 'increase probe isi'
+% Training stage 'increase probe isi'
 stim.att_cue_fix_soa_ini = 1.5;
 stim.att_cue_fix_soa_ini_step = -0.1; % Decrease fix soa
 stim.probe_isi_ini = 0.01;
 stim.probe_isi_ini_step = 0.1; % Increase probe isi
+
+% Training stage "decrease att cue length"
+stim.att_cue_length_ini = 7; % dva
+stim.att_cue_length_ini_step = -1; % decrease
+
+% Training stage "distractor contrast change"
+stim.distractor_contrast_ini = 0.05;
+stim.distractor_contrast_ini_step = 0.05;
+
+% Training stage 'lever release on big ring'
+stim.response_ring_size_start_ini = 10;
+stim.response_ring_size_start_ini_step = -2;
+
+
+
+
+
+
+
 
 
 %% Stimuli
@@ -136,7 +138,7 @@ stim.gabor_frequency = 1;
 % stim.gabor_contrast = 1; % range is 0-1;
 stim.gabor_phase = []; % Phase of the grating (0:1)
 stim.gabor_bgluminance = 0.5; % Background luminace (as stimuli are shown on gray)
-stim.gabor_sigma_period = (stim.att_stim_size*stim.gabor_frequency)/2; % Periods covered by one STD of gausian
+stim.gabor_sigma_period = (stim.att_stim_size*stim.gabor_frequency)/5; % Periods covered by one STD of gausian
 
 
 %==============

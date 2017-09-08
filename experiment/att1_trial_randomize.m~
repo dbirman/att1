@@ -88,38 +88,32 @@ t2 = expsetup.stim.att_stim_reps;
 a = Shuffle(expsetup.stim.att_stim_arc);
 temp1 = a(1:expsetup.stim.esetup_att_stim_number(tid,1)); % Select as many objects as there are
 
+
+% Determine size of attention stimulus
+%============
+% Fixed part
+ind0 = strcmp(expsetup.stim.training_stage_matrix, expsetup.stim.esetup_exp_version{tid});
+ind1 = find(ind0==1);
+ind0 = strcmp(expsetup.stim.training_stage_matrix, 'big target same orientation');
+ind2 = find(ind0==1);
+if ind1>ind2
+    temp1 = Shuffle(expsetup.stim.att_cue_fix_soa);
+elseif ind1==ind2
+    temp1 = Shuffle(tv1(1).temp_var_current);
+    var_copy.esetup_att_cue_fix_soa = temp1(1); % Copy variable for error trials
+elseif ind1<ind2
+    temp1 = Shuffle(expsetup.stim.att_cue_fix_soa_ini);
+end
+%=============
+expsetup.stim.esetup_att_cue_fix_soa(tid,1) = temp1(1);
+
+
 % Determine the coordinates/size for each att stimulus repetition
 for j = 1:t2
     expsetup.stim.esetup_att_stim_arc(tid, 1:t1, j) = temp1;
     expsetup.stim.esetup_att_stim_radius(tid, 1:t1, j) = expsetup.stim.att_stim_radius;
     expsetup.stim.esetup_att_stim_size(tid, 1:t1, j) = expsetup.stim.att_stim_size;
 end
-
-% Determine size of attention stimulus
-%============
-% Modified part
-ind0 = strcmp(expsetup.stim.training_stage_matrix, expsetup.stim.esetup_exp_version{tid});
-ind1 = find(ind0==1);
-ind0 = strcmp(expsetup.stim.training_stage_matrix, 'big target same orientation');
-ind2 = find(ind0==1);
-if ind1>ind2
-    temp1 = Shuffle(expsetup.stim.att_stim_size);
-elseif ind1==ind2
-    temp1 = Shuffle(tv1(1).temp_var_current);
-    for j = 1:t2
-        var_copy.esetup_att_stim_size(1,1:t1,j) = temp1(1); % Copy variable for error trials
-    end
-elseif ind1<ind2
-    temp1 = Shuffle(expsetup.stim.att_stim_size_ini);
-end
-%=============
-
-% Determine the coordinates/size for each att stimulus repetition
-for j = 1:t2
-    expsetup.stim.esetup_att_stim_size(tid, 1:t1, j) = temp1(1);
-end
-
-%%
 
 % Probe location and radius is location no1
 expsetup.stim.esetup_probe_arc(tid,1) = expsetup.stim.esetup_att_stim_arc(tid,1,1);

@@ -595,8 +595,7 @@ if strcmp(expsetup.stim.esetup_exp_version{tid}, 'final version') ||...
         strcmp(expsetup.stim.esetup_exp_version{tid}, 'distractor contrast stable') ||...
         strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target interleaved') ||...
         strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target same orientation') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target orientation change') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'big target same orientation')
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target orientation change')
     %==========
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
         expsetup.stim.edata_trial_online_counter(tid,1) = 1;
@@ -614,16 +613,27 @@ elseif strcmp(expsetup.stim.esetup_exp_version{tid}, 'lever hold training')
     end
     %=========
 
-elseif strcmp(expsetup.stim.esetup_exp_version{tid}, 'release lever on long ring') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'release lever on big ring')
+elseif strcmp(expsetup.stim.esetup_exp_version{tid}, 'release lever on long ring')
     %==========
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
         expsetup.stim.edata_trial_online_counter(tid,1) = 1;
-    elseif  strcmp(expsetup.stim.edata_error_code{tid}, 'lever not released') || ...
+    elseif strcmp(expsetup.stim.edata_error_code{tid}, 'lever hold failure') || ...
+            strcmp(expsetup.stim.edata_error_code{tid}, 'lever not released') || ...
             strcmp(expsetup.stim.edata_error_code{tid}, 'experimenter terminated the trial')
         expsetup.stim.edata_trial_online_counter(tid,1) = 2;
     end
     %=========
+    
+elseif strcmp(expsetup.stim.esetup_exp_version{tid}, 'release lever on big ring')
+    %==========
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
+        expsetup.stim.edata_trial_online_counter(tid,1) = 1;
+            strcmp(expsetup.stim.edata_error_code{tid}, 'lever not released') || ...
+            strcmp(expsetup.stim.edata_error_code{tid}, 'experimenter terminated the trial')
+        expsetup.stim.edata_trial_online_counter(tid,1) = 2;
+    end
+    %=========
+    
     
 else
     error ('Condition for correct/error trial tracking not specified')
@@ -634,7 +644,7 @@ end
 % Plot reward image onscreen
 if expsetup.stim.reward_feedback==1
     
-    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'space') || strcmp(char, 'r')
         Screen('DrawTexture', window, tex_positive, [], reward_rect, [], 0);
         [~, time_current, ~]=Screen('Flip', window);
     else
@@ -658,7 +668,7 @@ elseif expsetup.stim.reward_feedback==2  %Auditory feedback
         expsetup.stim.edata_reward_image_on(tid,1) = time_current;
     end
     
-    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'space') || strcmp(char, 'r')
         b1 = MakeBeep(600, 0.05);
         b2 = MakeBeep(800, 0.05);
         beep = [b1, b2];
@@ -687,7 +697,7 @@ elseif expsetup.stim.reward_feedback==3 && isfield (expsetup.general, 'arduino_s
         expsetup.stim.edata_reward_image_on(tid,1) = time_current;
     end
     
-    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'space') || strcmp(char, 'r')
         playTone(expsetup.general.arduino_session, 'D10', 600, 0.05);
         playTone(expsetup.general.arduino_session, 'D10', 800, 0.05);
         WaitSecs(expsetup.stim.reward_feedback_audio_dur);
@@ -708,7 +718,7 @@ end
 
 % Prepare reward signal
 if expsetup.general.reward_on==1
-    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'space') || strcmp(char, 'r')
         % Continous reward
         reward_duration = expsetup.stim.reward_size_ms;
         signal1 = linspace(expsetup.ni_daq.reward_voltage, expsetup.ni_daq.reward_voltage, reward_duration)';
@@ -718,7 +728,7 @@ if expsetup.general.reward_on==1
 end
 
 if expsetup.general.reward_on == 1
-    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+    if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'space') || strcmp(char, 'r')
         ni.session_reward.startForeground;
         if expsetup.general.recordeyes==1
             Eyelink('Message', 'reward_on');
@@ -734,51 +744,6 @@ if expsetup.general.reward_on == 1
     end
 end
 
-%% Make sure the space bar is released
-
-if ~strcmp(char,'x') || ~strcmp(char,'r') || ~strcmp(char,'c') || ~strcmp(char,'p')
-    
-    timer1_now = GetSecs;
-    time_start = GetSecs;
-    trial_duration = 30;
-    
-    % Record what kind of button was pressed
-    [keyIsDown,timeSecs,keyCode] = KbCheck;
-    char = KbName(keyCode);
-    % Catch potential press of two buttons
-    if iscell(char)
-        char=char{1};
-    end
-    
-    if keyIsDown==1 && strcmp(char,'space')
-        endloop_skip = 0;
-    else
-        endloop_skip = 1;
-    end
-    
-    while endloop_skip == 0
-        
-        % Record what kind of button was pressed
-        [keyIsDown,timeSecs,keyCode] = KbCheck;
-        char = KbName(keyCode);
-        % Catch potential press of two buttons
-        if iscell(char)
-            char=char{1};
-        end
-        
-        if keyIsDown==0
-            % End loop
-            endloop_skip=1;
-        else
-            % Check time & quit loop
-            timer1_now = GetSecs;
-            if timer1_now - time_start >= trial_duration
-                endloop_skip=1;
-            end
-        end
-        
-    end
-end
 
 %% Inter-trial interval & possibility to add extra reward
 
@@ -807,7 +772,7 @@ while endloop_skip == 0
     end
     
     % Give reward
-    if  strcmp(char,'r')
+    if strcmp(char,'space') || strcmp(char,'r')
         
         % Prepare reward signal
         if expsetup.general.reward_on==1

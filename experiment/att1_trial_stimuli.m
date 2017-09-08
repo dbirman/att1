@@ -3,8 +3,7 @@
 %% Fixation converted to pixels
 
 coord1=[];
-coord1(1,1) = expsetup.stim.esetup_fix_coord1(tid,1);
-coord1(2,1) = expsetup.stim.esetup_fix_coord2(tid,1);
+coord1(1,1:2) = expsetup.stim.esetup_fix_coord(tid,1:2);
 sz1 = expsetup.stim.fixation_size;
 
 fixation_rect = runexp_convert_deg2pix_rect_v10(coord1, sz1);
@@ -14,12 +13,11 @@ fixation_rect = runexp_convert_deg2pix_rect_v10(coord1, sz1);
 
 % Att cue position start (same as fixation position)
 coord1=[];
-coord1(1,1) = expsetup.stim.esetup_fix_coord1(tid,1);
-coord1(2,1) = expsetup.stim.esetup_fix_coord2(tid,1);
+coord1(1,1:2) = expsetup.stim.esetup_fix_coord(tid,1:2);
 rect1 = runexp_convert_deg2pix_coord_v10(coord1); % One column - one object;
 
 % Att cue position endpoint (variable on each trial)
-pos1 = expsetup.stim.esetup_att_cue_position(tid,1);
+pos1 = expsetup.stim.esetup_att_cue_arc(tid,1);
 rad1 = expsetup.stim.esetup_att_cue_length(tid,1);
 [xc, yc] = pol2cart(pos1*pi/180, rad1); % Convert to cartesian
 coord1=[];
@@ -27,12 +25,13 @@ coord1(1)=xc; coord1(2)=yc;
 rect2 = runexp_convert_deg2pix_coord_v10(coord1); % One column - one object;
 
 att_cue_rect = [rect1; rect2];
+att_cue_rect = round(att_cue_rect);
 
 
 %% All Gabor locations converted to pix
 
 t1 = expsetup.stim.esetup_att_stim_number(tid,1);
-pos1 = expsetup.stim.esetup_att_stim_position(tid,1:t1);
+pos1 = expsetup.stim.esetup_att_stim_arc(tid,1:t1);
 rad1 = expsetup.stim.esetup_att_stim_radius(tid,1:t1);
 [xc, yc] = pol2cart(pos1*pi/180, rad1); % Convert to cartesian
 coord1=[];
