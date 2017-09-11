@@ -69,13 +69,14 @@ for i = 1:size(angle1,2)
         gabor_size = [att_stim_rect(3,i)-att_stim_rect(1,i), att_stim_rect(4,i)-att_stim_rect(2,i)];
         gabor_size = round(gabor_size);
         pixelsPerPeriod = round(expsetup.screen.deg2pix/expsetup.stim.gabor_frequency); % How many pixels will each period/cycle occupy?
-        gabor_sigma_period = (gabor_size(1)*expsetup.stim.gabor_frequency)/expsetup.stim.gabor_sigma_period_factor;
+        (stim.att_stim_size*stim.gabor_frequency)/3
+        gabor_sigma_period = gabor_size(1)*expsetup.stim.gabor_sigma_period;
         gabor_bgluminance = expsetup.stim.gabor_bgluminance;
         
         % Grating
         TargetGrating = GenerateGrating(gabor_size(1), gabor_size(2), gabor_angle, pixelsPerPeriod, gabor_phase, gabor_contrast);
         
-        sigma=gabor_sigma_period;
+        sigma=pixelsPerPeriod*gabor_sigma_period;
         aperture = GenerateGaussian(gabor_size(1), gabor_size(2), sigma, sigma, 0, 0, 0); % Make Gaussian aperture = Gabors
         TargetShift = TargetGrating + gabor_bgluminance; % Shifts values to around mean luminance
         TargetShift(TargetShift>1)=1; TargetShift(TargetShift<0)=0;

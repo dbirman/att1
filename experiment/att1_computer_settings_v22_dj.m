@@ -8,7 +8,7 @@
 % v21 DJ April 1, 2017. Added tcp ip connection settings
 
 
-function att1_computer_settings_dj_v22
+function att1_computer_settings_v22_dj
  
 global expsetup
 

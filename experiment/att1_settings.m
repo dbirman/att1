@@ -3,9 +3,15 @@
 % Produces stim structure which contains all stimuli settings and trial
 % definitions
 
+
+if ~isfield (expsetup.general, 'human_exp')
+    expsetup.general.human_exp=1;
+end
+
+
 %% Different training stages have different stim durations
 
-stim.exp_version_temp = 'lever hold training'; % Version you want to run
+stim.exp_version_temp = 'introduce gabor phase change'; % Version you want to run
 
 if isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'aq')
 elseif isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'hb')
@@ -16,11 +22,14 @@ end
 stim.training_stage_matrix = {...
     'lever hold training',...
     'release lever on long ring', 'release lever on big ring',...
-    'big target same orientation',...
-    'single target same orientation', ...
-    'single target orientation change',...
+    'single target same orientation one ring', ...
+    'single target same orientation two rings', ...
+    'single target orientation change one ring',...
+    'single target orientation change two rings',...
     'single target interleaved',...
-    'distractor contrast change', 'distractor contrast stable', ...
+    'reduce target size',...
+    'introduce gabor phase change',...
+    'introduce distractors', 'distractor contrast stable', ...
     'decrease att cue length', 'increase probe isi',...
     'final version'};
 
@@ -29,9 +38,11 @@ stim.training_stage_matrix_numbers = 1:numel(stim.training_stage_matrix);
 % 'lever hold training' - train to hold the lever till object of given color appears
 % 'lever release on long ring' - release lever when ring appears (ring duration gets shorter)
 % 'lever release on big ring' - release lever when ring appears (ring gets smaller)
-% 'big target same orientation' - reduce gabor patch size
-% 'single target same orientation' - only trials with probe orientation same
+% 'single target same orientation' - only trials with probe orientation same. Both rings.
 % 'single target orientation change' - only trials with probe orientation changes
+% 'single target interleaved' - interleave change and no change
+% 'introduce gabor phase change' - make phase of the targets change on each rep
+% 'reduce target size'
 % 'distractor contrast change' - distractor contrast increases
 % 'distractor contrast stable' - distractor contrast stable - evaluate performance whether to go to next stage
 % 'decrease att cue length' - att cue gets shorter length
@@ -52,7 +63,7 @@ stim.response_ring_size_start_ini = 10;
 stim.response_ring_size_start_ini_step = -2;
 
 % 'big target same orientation'
-stim.att_stim_size_ini = 10;
+stim.att_stim_size_ini = 15;
 stim.att_stim_size_ini_step = -1;
 
 % 'distractor contrast change'
@@ -108,8 +119,8 @@ stim.att_stim_arc = [45:90:360];
 stim.att_stim_reps = 2; % How many att stim repetitions
 stim.att_stim_reps_probe = 2; % On which repetition probe appears
 stim.att_stim_radius = 7;
-stim.att_stim_size = 5; 
-stim.att_stim_angle = [0:10:170];
+stim.att_stim_size = 4; % Only ~half size will be visible due to gaussian mask
+stim.att_stim_angle = [-20:10:20];
 
 %====================
 % Probes
@@ -132,17 +143,17 @@ stim.distractor_contrast = 1;
 %==============
 % Gabors
 
-stim.gabor_frequency = 1;
+stim.gabor_frequency = 2;
 % stim.gabor_contrast = 1; % range is 0-1;
 stim.gabor_phase = []; % Phase of the grating (0:1)
 stim.gabor_bgluminance = 0.5; % Background luminace (as stimuli are shown on gray)
-stim.gabor_sigma_period = (stim.att_stim_size*stim.gabor_frequency)/2; % Periods covered by one STD of gausian
+stim.gabor_sigma_period_factor = 10; % Freq*size periods covered by one STD of gausian
 
 
 %==============
 % Response ring
 
-stim.response_ring_duration = 0.9; % Seconds to give response
+stim.response_ring_duration = 0.6; % Seconds to give response
 stim.response_ring_isi = 0.1; % Time interval between two rings
 stim.response_ring_size_start = 4; % How many degrees is ring size
 stim.response_ring_size_end = 0; % How many degrees is ring size
@@ -178,8 +189,13 @@ stim.background_color = [127, 127, 127];
 
 %===============
 % Duration of trials
-stim.trial_dur_intertrial = 2; % Blank screen at the end
-stim.trial_dur_intertrial_error = 3; % Blank screen at the end
+if expsetup.general.human_exp == 1
+    stim.trial_dur_intertrial = 0.5; % Blank screen at the end
+    stim.trial_dur_intertrial_error = 3; % Blank screen at the end
+else
+    stim.trial_dur_intertrial = 2; % Blank screen at the end
+    stim.trial_dur_intertrial_error = 3; % Blank screen at the end
+end
 
 %===============
 % Other
@@ -191,9 +207,10 @@ stim.trial_correct_goal_down = 2; % What is accuracy to make task harder
 
 % Other
 stim.trial_error_repeat = 1; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
-stim.trial_abort_counter = 20; % Quit experiment if trials in a row are aborted
+stim.trial_abort_counter = 30; % Quit experiment if trials in a row are aborted
 stim.plot_every_x_trial = 1; % Every which trial to plot (every 1, 2nd, 10th etc trial)
 
+stim.lever_press_penalty = 30; % How long to wait to encourage release of the lever
 
 %%  Reward
 

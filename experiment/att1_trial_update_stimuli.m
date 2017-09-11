@@ -28,7 +28,7 @@ if strcmp(expsetup.stim.exp_version_temp, 'decrease att cue length')
 end
 
 % Select variables to be modified
-if strcmp(expsetup.stim.exp_version_temp, 'distractor contrast change')
+if strcmp(expsetup.stim.exp_version_temp, 'introduce distractors')
     tv1(1).temp_var_final = nanmean(expsetup.stim.distractor_contrast);
     tv1(1).temp_var_ini = expsetup.stim.distractor_contrast_ini;
     tv1(1).temp_var_ini_step = expsetup.stim.distractor_contrast_ini_step;
@@ -64,7 +64,7 @@ if strcmp(expsetup.stim.exp_version_temp, 'release lever on big ring')
 end
 
 % Select variables to be modified
-if strcmp(expsetup.stim.exp_version_temp, 'big target same orientation')
+if strcmp(expsetup.stim.exp_version_temp, 'reduce target size')
     tv1(1).temp_var_final = nanmean(expsetup.stim.att_stim_size);
     tv1(1).temp_var_ini = expsetup.stim.att_stim_size_ini;
     tv1(1).temp_var_ini_step = expsetup.stim.att_stim_size_ini_step;
