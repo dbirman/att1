@@ -14,6 +14,33 @@
 % task parameters
 
 
+%% Detect whether task is changing
+
+if tid==1
+    if ~isfield(expsetup.stim, 'exp_version_temp')
+        expsetup.stim.exp_version_temp = expsetup.stim.training_stage_matrix{end}; % Version to start with on the first trial
+    end
+    expsetup.stim.exp_version_update_next_trial = 0;
+    fprintf('Running task version: %s\n', expsetup.stim.exp_version_temp)
+elseif tid>1
+    if expsetup.stim.exp_version_update_next_trial == 0 % Keep the same
+        b = expsetup.stim.esetup_exp_version{tid-1};
+        expsetup.stim.exp_version_temp = b;
+    elseif expsetup.stim.exp_version_update_next_trial == 1 % Change the task
+        a = expsetup.stim.esetup_exp_version{tid-1};
+        ind1 = strcmp(expsetup.stim.training_stage_matrix, a);
+        ind1 = find(ind1==1);
+        if ind1+1<=numel(expsetup.stim.training_stage_matrix)
+            b = expsetup.stim.training_stage_matrix{ind1+1};
+        else
+            b = expsetup.stim.training_stage_matrix{ind1};
+        end
+        expsetup.stim.exp_version_temp = b;
+    end
+    fprintf('Running task version: %s\n', expsetup.stim.exp_version_temp)
+end
+
+
 %% Determine how to update the task to next stage
 
 % Initialize tv1 structure
@@ -22,10 +49,10 @@ eval (u1);
 
 % Select which update is being done
 if isfield(tv1(1), 'single_step_update')
-    if tv1(1).single_step_update==1 % Gradual update
+    if strcmp(tv1(1).update, 'gradual') % Gradual update
         trial_online_counter = expsetup.stim.trial_online_counter_gradual;
         update_var = 1;
-    elseif tv1(1).single_step_update==2 % Step update
+    elseif strcmp(tv1(1).update, 'step') % Step update
         trial_online_counter = expsetup.stim.trial_online_counter_single_step;
         update_var = 2;
     end

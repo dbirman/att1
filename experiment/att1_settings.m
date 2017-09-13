@@ -27,8 +27,8 @@ stim.training_stage_matrix = {...
     'single target orientation change one ring',...
     'single target orientation change two rings',...
     'single target interleaved',...
-    'reduce target size',...
     'introduce gabor phase change',...
+    'reduce target size',...
     'introduce distractors', 'distractor contrast stable', ...
     'decrease att cue length', 'increase probe isi',...
     'final version'};
@@ -196,6 +196,9 @@ else
     stim.trial_dur_intertrial = 2; % Blank screen at the end
     stim.trial_dur_intertrial_error = 3; % Blank screen at the end
 end
+stim.trial_error_repeat = 1; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
+stim.trial_abort_counter = 30; % Quit experiment if trials in a row are aborted
+
 
 %===============
 % Updating task
@@ -217,11 +220,13 @@ stim.trial_online_counter_single_step_goal_up = 0.8; % Proportion of trials corr
 
 %===============
 % Other
-stim.trial_error_repeat = 1; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
-stim.trial_abort_counter = 30; % Quit experiment if trials in a row are aborted
-stim.plot_every_x_trial = 1; % Every which trial to plot (every 1, 2nd, 10th etc trial)
 
-stim.lever_press_penalty = 1000; % How long to wait to encourage release of the lever
+stim.lever_press_penalty = 1000; % How long to wait for the release of the lever
+
+%=============
+% Trial numbers
+stim.final_version_trial_number = 1000; % When to terminate experiment in the final version of the task
+
 
 %%  Reward
 

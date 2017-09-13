@@ -930,22 +930,11 @@ end
 
 fprintf('  \n')
 
-%% End experiment (only on final training version)
+%% End experiment
 
-if strcmp(expsetup.stim.esetup_exp_version{tid}, 'final version')
-    ind1 = strcmp(expsetup.stim.esetup_exp_version, 'final version');
-    if sum(ind1)>=expsetup.stim.final_version_trial_number
-        expsetup.stim.end_experiment = 1;
-    end
-    
-    
-    
-else
-    expsetup.stim.end_experiment = 0;
-end
-
-
+if strcmp(expsetup.stim.)
 if tid==1000
+    expsetup.stim.end_experiment = 1;
 else
     expsetup.stim.end_experiment = 0;
 end
