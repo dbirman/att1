@@ -232,32 +232,37 @@ end
 % Probe tilt angle
 
 %============
-% Modified part
+% Fixed part
 ind0 = strcmp(expsetup.stim.training_stage_matrix, expsetup.stim.esetup_exp_version{tid});
 ind1 = find(ind0==1);
 ind0 = strcmp(expsetup.stim.training_stage_matrix, 'introduce probe angle difference');
 ind2 = find(ind0==1);
 if ind1>ind2
-    p_diff = expsetup.stim.probe_angle_diff;
+    t_d = Shuffle(expsetup.stim.distractor_contrast);
 elseif ind1==ind2
-    p_diff = expsetup.stim.probe_angle_diff;
+    temp1 = Shuffle(tv1(1).temp_var_current);
+    var_copy.esetup_distractor_contrast = temp1(1); % Copy variable for error trials
 elseif ind1<ind2
-    p_diff = expsetup.stim.probe_angle_diff_ini;
+    temp1 = 0; % No distractors
 end
 %=============
+expsetup.stim.esetup_distractor_contrast(tid,1) = temp1(1);
+
+
+
 
 
 if c1(1)==1 % No probe angle change
     expsetup.stim.esetup_probe_change(tid,1) = c1(1); % Save whether it is probe change or no change
 elseif c1(1)==2 % Probe angle change
-    a = Shuffle(p_diff); % Difference from probe angle
+    a = Shuffle(expsetup.stim.probe_angle_diff); % Difference from probe angle
     b = expsetup.stim.esetup_att_stim_angle(tid,1,1); % First element is probe angle
     temp1 = a(1)+b;
-% % %     if temp1<0
-% % %         temp1 = temp1+180;
-% % %     elseif temp1>=180
-% % %         temp1 = temp1-180;
-% % %     end
+    if temp1<0
+        temp1 = temp1+180;
+    elseif temp1>=180
+        temp1 = temp1-180;
+    end
     expsetup.stim.esetup_probe_angle(tid,1) = temp1; % Save probe angle
     j = expsetup.stim.att_stim_reps_probe;
     expsetup.stim.esetup_att_stim_angle(tid,1,j) = temp1; % Over-write with the new probe angle
