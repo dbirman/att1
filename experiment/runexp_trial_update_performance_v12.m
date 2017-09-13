@@ -55,6 +55,12 @@ if isfield(tv1(1), 'update')
     elseif strcmp(tv1(1).update, 'step') % Step update
         trial_online_counter = expsetup.stim.trial_online_counter_single_step;
         update_var = 2;
+    else
+        % No updating
+        fprintf('This task does not update\n')
+        update_var = 0;
+        tv1 = struct; % Over-write structure empty;
+        trial_online_counter = 1000;
     end
 else
     % No updating

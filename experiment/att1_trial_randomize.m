@@ -468,6 +468,27 @@ expsetup.stim.esetup_response_ring_size_start(tid,1) = temp1(1);
 expsetup.stim.esetup_response_ring_size_end(tid,1) = expsetup.stim.response_ring_size_end;
 
 
+%% Add background texture?
+
+%============
+% Fixed part
+ind0 = strcmp(expsetup.stim.training_stage_matrix, expsetup.stim.esetup_exp_version{tid});
+ind1 = find(ind0==1);
+ind0 = strcmp(expsetup.stim.training_stage_matrix, 'release lever on big ring');
+ind2 = find(ind0==1);
+if ind1>ind2
+    temp1 = Shuffle(expsetup.stim.noise_background_texture_on);
+elseif ind1==ind2
+    temp1 = Shuffle(tv1(1).temp_var_current);
+    var_copy.esetup_noise_background_texture_on = temp1(1); % Copy variable for error trials
+elseif ind1<ind2
+    temp1 = 0;
+end
+%=============
+
+temp1 = Shuffle(expsetup.stim.noise_background_texture_on);
+expsetup.stim.esetup_noise_background_texture_on(tid,1) = temp1(1);
+
 
 %% If previous trial was an error, then copy settings of the previous trial
 

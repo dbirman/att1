@@ -11,14 +11,6 @@ end
 
 %% Different training stages have different stim durations
 
-stim.exp_version_temp = 'single target same orientation one ring'; % Version you want to run
-
-if isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'aq')
-elseif isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'hb')
-elseif isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'jw')
-else
-end
-
 stim.training_stage_matrix = {...
     'lever hold training',...
     'release lever on long ring', 'release lever on big ring',...
@@ -30,11 +22,38 @@ stim.training_stage_matrix = {...
     'introduce gabor phase change',...
     'reduce target size',...
     'introduce distractors', 'distractor contrast stable', ...
+    'add background texture',...
     'decrease att cue length', 'increase probe isi',...
     'introduce probe angle difference',...
     'final version'};
 
 stim.training_stage_matrix_numbers = 1:numel(stim.training_stage_matrix);
+
+%% Select current training stage
+
+if expsetup.general.debug>0
+    stim.exp_version_temp = 'add background texture'; % Version you want to run
+else
+    a = input ('Select training stage by number. Enter 0 if you want to see the list: ');
+    if a==0
+        for i=1:numel(stim.training_stage_matrix)
+            fprintf ('%d - %s\n', i, stim.training_stage_matrix{i})
+        end
+        b = input ('Select training stage by number: ');
+        if b>numel(stim.training_stage_matrix)
+            stim.exp_version_temp = stim.training_stage_matrix{end};
+        else
+            stim.exp_version_temp = stim.training_stage_matrix{b};
+        end
+    else
+        stim.exp_version_temp = stim.training_stage_matrix{a};
+    end
+end
+
+% In case code wont work, just un-comment and over-write:
+% stim.exp_version_temp = 'single target same orientation one ring'; % Version you want to run
+
+%% Variables for different training stages
 
 % 'lever hold training' - train to hold the lever till object of given color appears
 % 'lever release on long ring' - release lever when ring appears (ring duration gets shorter)
@@ -46,6 +65,7 @@ stim.training_stage_matrix_numbers = 1:numel(stim.training_stage_matrix);
 % 'reduce target size'
 % 'distractor contrast change' - distractor contrast increases
 % 'distractor contrast stable' - distractor contrast stable - evaluate performance whether to go to next stage
+% 'add background texture'
 % 'decrease att cue length' - att cue gets shorter length
 % 'increase probe soa' - it becomes a memory task
 % 'introduce probe angle difference' - varies probe angle difference
@@ -92,6 +112,7 @@ stim.probe_angle_diff_ini = 45;
 % Noise stimulus
 stim.noise_background_position = [0,0];
 stim.noise_background_size = [0,0,20,15]; 
+stim.noise_background_texture_on = [1,1,1,1,0]; % Probability of texture
 
 %==============
 % Fixation
@@ -314,6 +335,7 @@ stim.esetup_response_ring_duration = NaN;
 stim.esetup_response_ring_size_start = NaN;
 stim.esetup_response_ring_size_end = NaN;
 
+esetup_noise_background_texture_on = NaN;
 
 stim.edata_first_display = NaN; 
 stim.edata_texture_on = NaN;
