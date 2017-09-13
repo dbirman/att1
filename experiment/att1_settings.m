@@ -11,7 +11,7 @@ end
 
 %% Different training stages have different stim durations
 
-stim.exp_version_temp = 'introduce gabor phase change'; % Version you want to run
+stim.exp_version_temp = 'distractor contrast stable'; % Version you want to run
 
 if isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'aq')
 elseif isfield(expsetup.general, 'subject_id') && strcmp(expsetup.general.subject_id, 'hb')
@@ -198,19 +198,30 @@ else
 end
 
 %===============
-% Other
+% Updating task
 
-% Staircase
-stim.trial_online_counter = 3; % How many trials to count for updating task difficulty
+% Updating task with staircase
+stim.trial_online_counter_gradual = 3; % How many trials to count for updating task difficulty
 stim.trial_correct_goal_up = 3; % What is accuracy to make task harder
 stim.trial_correct_goal_down = 2; % What is accuracy to make task harder
 
+% Updating task without staircase
+if expsetup.general.human_exp == 1
+    stim.trial_online_counter_single_step = 10;
+    stim.trial_online_counter_single_step_tn = 0.8; % Proportion of trials needed for updating performance
+else
+    stim.trial_online_counter_single_step = 100;
+    stim.trial_online_counter_single_step_tn = 0.8; % Proportion of trials needed for updating performance
+end
+stim.trial_online_counter_single_step_goal_up = 0.8; % Proportion of trials correct
+
+%===============
 % Other
 stim.trial_error_repeat = 1; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
 stim.trial_abort_counter = 30; % Quit experiment if trials in a row are aborted
 stim.plot_every_x_trial = 1; % Every which trial to plot (every 1, 2nd, 10th etc trial)
 
-stim.lever_press_penalty = 30; % How long to wait to encourage release of the lever
+stim.lever_press_penalty = 1000; % How long to wait to encourage release of the lever
 
 %%  Reward
 

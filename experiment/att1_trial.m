@@ -30,7 +30,7 @@ elseif tid>1
 end
 
 % Update performance if necessary
-runexp_trial_update_performance_v11
+runexp_trial_update_performance_v12
 
 
 %% PREPARE ALL OBJECTS AND FRAMES TO BE DRAWN:
