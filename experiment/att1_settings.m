@@ -32,7 +32,7 @@ stim.training_stage_matrix_numbers = 1:numel(stim.training_stage_matrix);
 %% Select current training stage
 
 if expsetup.general.debug>0
-    stim.exp_version_temp = 'add background texture'; % Version you want to run
+    stim.exp_version_temp = 'single target orientation change one ring'; % Version you want to run
 else
     a = input ('Select training stage by number. Enter 0 if you want to see the list: ');
     if a==0
@@ -235,7 +235,7 @@ else
     stim.trial_dur_intertrial = 2; % Blank screen at the end
     stim.trial_dur_intertrial_error = 3; % Blank screen at the end
 end
-stim.trial_error_repeat = 1; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
+stim.trial_error_repeat = 0; % 1 - repeats same trial if error occured immediatelly; 0 - no repeat
 stim.trial_abort_counter = 30; % Quit experiment if trials in a row are aborted
 
 
