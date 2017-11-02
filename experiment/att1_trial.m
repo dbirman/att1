@@ -3,34 +3,9 @@
 window = expsetup.screen.window;
 
 
-%% Exp stage (either keep the same or change the task)
+%% Training stage in the experiment
 
-if tid==1
-    if ~isfield(expsetup.stim, 'exp_version_temp')
-        expsetup.stim.exp_version_temp = expsetup.stim.training_stage_matrix{end}; % Version to start with on the first trial
-    end
-    expsetup.stim.exp_version_update_next_trial = 0;
-    fprintf('Running task version: %s\n', expsetup.stim.exp_version_temp)
-elseif tid>1
-    if expsetup.stim.exp_version_update_next_trial == 0 % Keep the same
-        b = expsetup.stim.esetup_exp_version{tid-1};
-        expsetup.stim.exp_version_temp = b;
-    elseif expsetup.stim.exp_version_update_next_trial == 1 % Change the task
-        a = expsetup.stim.esetup_exp_version{tid-1};
-        ind1 = strcmp(expsetup.stim.training_stage_matrix, a);
-        ind1 = find(ind1==1);
-        if ind1+1<=numel(expsetup.stim.training_stage_matrix)
-            b = expsetup.stim.training_stage_matrix{ind1+1};
-        else
-            b = expsetup.stim.training_stage_matrix{ind1};
-        end
-        expsetup.stim.exp_version_temp = b;
-    end
-    fprintf('Running task version: %s\n', expsetup.stim.exp_version_temp)
-end
-
-% Update performance if necessary
-runexp_trial_update_performance_v11
+runexp_trial_update_performance_v12
 
 
 %% PREPARE ALL OBJECTS AND FRAMES TO BE DRAWN:
@@ -72,9 +47,55 @@ if expsetup.general.recordeyes==1
 end
 
 
-%% ================
+%% Before starting anything, make sure lever is not pressed
 
-% FIRST DISPLAY - BLANK
+% Record what kind of button was pressed
+[keyIsDown,timeSecs,keyCode] = KbCheck;
+char = KbName(keyCode);
+% Catch potential press of two buttons
+if iscell(char)
+    char=char{1};
+end
+
+if keyIsDown==1 && strcmp(char,'space') % If space bar was last key recorded
+    
+    timer1_now = GetSecs;
+    time_start = GetSecs;
+    trial_duration = expsetup.stim.lever_press_penalty;
+    
+    % Check whether space is pressed now
+    if keyIsDown==1 && strcmp(char,'space')
+        endloop_skip = 0;
+    else
+        endloop_skip = 1;
+    end
+    
+    % Loop for 30 seconds before space is released
+    while endloop_skip == 0
+        
+        % Record what kind of button was pressed
+        [keyIsDown,timeSecs,keyCode] = KbCheck;
+        char = KbName(keyCode);
+        % Catch potential press of two buttons
+        if iscell(char)
+            char=char{1};
+        end
+        
+        if keyIsDown==0
+            % End loop
+            endloop_skip=1;
+        else
+            % Check time & quit loop
+            timer1_now = GetSecs;
+            if timer1_now - time_start >= trial_duration
+                endloop_skip=1;
+            end
+        end
+    end
+    
+end
+
+%% FIRST DISPLAY
 
 Screen('FillRect', window, expsetup.stim.background_color);
 if expsetup.general.record_plexon==1
@@ -191,10 +212,12 @@ while loop_over==0
     %==================
     % Noise texture
     
-    var1 = expsetup.stim.eframes_texture_on{tid};
-    if var1(c1_frame_index1,1)==1
-        tex=texture_backgroud{1};
-        Screen('DrawTexture', window, tex, [], background_rect, [], 0);
+    if expsetup.stim.esetup_noise_background_texture_on(tid)==1
+        var1 = expsetup.stim.eframes_texture_on{tid};
+        if var1(c1_frame_index1,1)==1
+            tex=texture_backgroud{1};
+            Screen('DrawTexture', window, tex, [], background_rect, [], 0);
+        end
     end
     
     %==================
@@ -223,8 +246,7 @@ while loop_over==0
         fcolor1 = expsetup.stim.fixation_color_baseline;
         Screen('DrawLine', window, fcolor1, att_cue_rect(1), att_cue_rect(2), att_cue_rect(3), att_cue_rect(4), expsetup.stim.att_cue_pen);
     end
-    
-    
+     
     %==================
     % Plot gabor patches
     if expsetup.stim.eframes_att_stim_on{tid}(c1_frame_index1, 1) > 0
@@ -539,7 +561,7 @@ end
 % Close texture
 if exist('tex')
     try
-    Screen('Close', tex);
+        Screen('Close', tex);
     end
 end
 
@@ -589,14 +611,21 @@ Screen('FillRect', window, expsetup.stim.background_color);
 % some cases correct trials can be discounted.
 
 if strcmp(expsetup.stim.esetup_exp_version{tid}, 'final version') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'increase probe isi') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'decrease att cue length') || ...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'distractor contrast change')  || ...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'distractor contrast stable') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target same orientation one ring') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target same orientation two rings') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target orientation change one ring') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target orientation change two rings') ||...
         strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target interleaved') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target same orientation') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'single target orientation change') ||...
-        strcmp(expsetup.stim.esetup_exp_version{tid}, 'big target same orientation')
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'reduce target size') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'introduce gabor phase change') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'introduce distractors')  || ...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'distractor contrast stable') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'add background texture')  || ...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'decrease att cue length') || ...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'increase probe isi') ||...
+        strcmp(expsetup.stim.esetup_exp_version{tid}, 'introduce probe angle difference')
+    
+    
     %==========
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct')
         expsetup.stim.edata_trial_online_counter(tid,1) = 1;
@@ -632,12 +661,14 @@ end
 %% Trial feedback
 
 % Plot reward image onscreen
-if expsetup.stim.reward_feedback==1
+if expsetup.general.human_exp==1 || expsetup.stim.reward_feedback==1
     
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
+        Screen('FillRect', window, tex_positive_background_color);
         Screen('DrawTexture', window, tex_positive, [], reward_rect, [], 0);
         [~, time_current, ~]=Screen('Flip', window);
     else
+        Screen('FillRect', window, tex_negative_background_color);
         Screen('DrawTexture',window, tex_negative, [], reward_rect, [], 0);
         [~, time_current, ~]=Screen('Flip', window);
     end
@@ -648,8 +679,10 @@ if expsetup.stim.reward_feedback==1
         end
         expsetup.stim.edata_reward_image_on(tid,1) = time_current;
     end
+end
     
-elseif expsetup.stim.reward_feedback==2  %Auditory feedback
+% Auditory feedback
+if expsetup.general.human_exp==1 || expsetup.stim.reward_feedback==2  
     
     if isnan(expsetup.stim.edata_reward_image_on(tid,1))
         if expsetup.general.recordeyes==1
@@ -676,9 +709,10 @@ elseif expsetup.stim.reward_feedback==2  %Auditory feedback
         Snd('Play', beep);
         WaitSecs(expsetup.stim.reward_feedback_audio_dur);
     end
-    
-    
-elseif expsetup.stim.reward_feedback==3 && isfield (expsetup.general, 'arduino_session')
+end
+
+% Arduino feedback
+if expsetup.stim.reward_feedback==3 && isfield (expsetup.general, 'arduino_session')
     
     if isnan(expsetup.stim.edata_reward_image_on(tid,1))
         if expsetup.general.recordeyes==1
@@ -707,7 +741,7 @@ end
 %% Start reward
 
 % Prepare reward signal
-if expsetup.general.reward_on==1
+if expsetup.general.human_exp~=1 && expsetup.general.reward_on==1
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
         % Continous reward
         reward_duration = expsetup.stim.reward_size_ms;
@@ -717,7 +751,7 @@ if expsetup.general.reward_on==1
     end
 end
 
-if expsetup.general.reward_on == 1
+if expsetup.general.human_exp~=1 && expsetup.general.reward_on == 1
     if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') || strcmp(char, 'r')
         ni.session_reward.startForeground;
         if expsetup.general.recordeyes==1
@@ -736,11 +770,11 @@ end
 
 %% Make sure the space bar is released
 
-if ~strcmp(char,'x') || ~strcmp(char,'r') || ~strcmp(char,'c') || ~strcmp(char,'p')
+if strcmp(char,'space') % If space bar was last key recorded
     
     timer1_now = GetSecs;
     time_start = GetSecs;
-    trial_duration = 30;
+    trial_duration = expsetup.stim.lever_press_penalty;
     
     % Record what kind of button was pressed
     [keyIsDown,timeSecs,keyCode] = KbCheck;
@@ -750,12 +784,14 @@ if ~strcmp(char,'x') || ~strcmp(char,'r') || ~strcmp(char,'c') || ~strcmp(char,'
         char=char{1};
     end
     
+    % Check whether space is pressed now
     if keyIsDown==1 && strcmp(char,'space')
         endloop_skip = 0;
     else
         endloop_skip = 1;
     end
     
+    % Loop for 30 seconds before space is released
     while endloop_skip == 0
         
         % Record what kind of button was pressed
@@ -776,15 +812,15 @@ if ~strcmp(char,'x') || ~strcmp(char,'r') || ~strcmp(char,'c') || ~strcmp(char,'
                 endloop_skip=1;
             end
         end
-        
     end
+    
 end
 
 %% Inter-trial interval & possibility to add extra reward
 
 timer1_now = GetSecs;
 time_start = GetSecs;
-if ~isnan(expsetup.stim.edata_reward_on(tid)) 
+if strcmp(expsetup.stim.edata_error_code{tid}, 'correct') 
     trial_duration = expsetup.stim.trial_dur_intertrial;
 else % Error trials
     trial_duration = expsetup.stim.trial_dur_intertrial_error;
@@ -810,7 +846,7 @@ while endloop_skip == 0
     if  strcmp(char,'r')
         
         % Prepare reward signal
-        if expsetup.general.reward_on==1
+        if expsetup.general.human_exp~=1 && expsetup.general.reward_on==1
             % Continous reward
             reward_duration = expsetup.stim.reward_size_ms;
             signal1 = linspace(expsetup.ni_daq.reward_voltage, expsetup.ni_daq.reward_voltage, reward_duration)';
@@ -818,7 +854,7 @@ while endloop_skip == 0
             queueOutputData(ni.session_reward, signal1);
         end
         
-        if expsetup.general.reward_on == 1
+        if expsetup.general.human_exp~=1 && expsetup.general.reward_on == 1
             ni.session_reward.startForeground;
             if expsetup.general.recordeyes==1
                 Eyelink('Message', 'reward_on');
@@ -899,11 +935,22 @@ end
 
 fprintf('  \n')
 
-%% End experiment
+%% End experiment (only on final training version)
+
+if strcmp(expsetup.stim.esetup_exp_version{tid}, 'final version')
+    ind1 = strcmp(expsetup.stim.esetup_exp_version, 'final version');
+    if sum(ind1)>=expsetup.stim.final_version_trial_number
+        expsetup.stim.end_experiment = 1;
+    end
+    
+    
+    
+else
+    expsetup.stim.end_experiment = 0;
+end
 
 
 if tid==1000
-    expsetup.stim.end_experiment = 1;
 else
     expsetup.stim.end_experiment = 0;
 end

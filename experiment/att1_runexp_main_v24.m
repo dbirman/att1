@@ -16,9 +16,10 @@ global ni
 
 %% General settings to run the code
 
-expsetup.general.expname = 'att1';
-expsetup.general.exp_location = 'dj'; % 'dj'; 'mbox'; 'dan'; 'edoras'; 'citadel';
-expsetup.general.debug = 2; % 0: default; 1: reward off, eyelink off; 2: reward off, eyelink off, display transparent
+expsetup.general.expname = 'att1'; 
+expsetup.general.exp_location = 'dan'; % 'dj'; 'mbox'; 'dan'; 'edoras'; 'citadel';
+expsetup.general.debug = 0; % 0: no debugging; 1: reward off, eyelink off; 2: reward off, eyelink off, display transparent
+expsetup.general.human_exp = 1; % 1 - human; 2 - monkey
 
 % Devices and routines
 expsetup.general.record_plexon = 0;  % 0 - no recording; 1 - yes recording;

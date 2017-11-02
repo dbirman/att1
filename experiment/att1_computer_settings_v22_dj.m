@@ -8,7 +8,7 @@
 % v21 DJ April 1, 2017. Added tcp ip connection settings
 
 
-function att1_computer_settings_dj_v22
+function att1_computer_settings_v22_dj
  
 global expsetup
 
@@ -17,16 +17,17 @@ global expsetup
 % In this case set path to experiments
 
 
-% expsetup.general.directory_baseline_code = 'C:\Users\Rig-E\Desktop\Experiments\';
-% expsetup.general.directory_baseline_data = 'C:\Users\Rig-E\Desktop\Experiments_data\';
-% expsetup.general.directory_baseline_data_server = 'Z:\data\RigE\Experiments_data\';
 expsetup.general.directory_baseline_code = '~/proj/experiments/';
 expsetup.general.directory_baseline_data = '~/proj/experiments_data/';
 
 
 % This is viewpix display
-expsetup.general.monwidth_cm = 52; % Horizontal dimension of viewable screen (cm)
-expsetup.general.monheight_cm = 29.5;
+% Laptop
+expsetup.general.monwidth_cm = 28; % Horizontal dimension of viewable screen (cm)
+expsetup.general.monheight_cm = 18;
+% Desktop
+% expsetup.general.monwidth_cm = 52; % Horizontal dimension of viewable screen (cm)
+% expsetup.general.monheight_cm = 29.5;
 expsetup.general.viewingdist_cm = 60; % Viewing distance (cm)
 expsetup.general.fps_expected = []; % Expected refresh rate for the setup; otherwise experiment will be stopped
 

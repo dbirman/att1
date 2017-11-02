@@ -26,7 +26,7 @@ end
 temp1 = frames_mat(:,1);
 temp1(:, 1) = 1;
 % Save data
-expsetup.stim.eframes_background_on{tid}=temp1;
+expsetup.stim.eframes_texture_on{tid}=temp1;
 
 
 %% Blinking fixation

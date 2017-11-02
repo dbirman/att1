@@ -69,13 +69,13 @@ for i = 1:size(angle1,2)
         gabor_size = [att_stim_rect(3,i)-att_stim_rect(1,i), att_stim_rect(4,i)-att_stim_rect(2,i)];
         gabor_size = round(gabor_size);
         pixelsPerPeriod = round(expsetup.screen.deg2pix/expsetup.stim.gabor_frequency); % How many pixels will each period/cycle occupy?
-        gabor_sigma_period = expsetup.stim.gabor_sigma_period;
+        gabor_sigma_period = (gabor_size(1)*expsetup.stim.gabor_frequency)/expsetup.stim.gabor_sigma_period_factor;
         gabor_bgluminance = expsetup.stim.gabor_bgluminance;
         
         % Grating
         TargetGrating = GenerateGrating(gabor_size(1), gabor_size(2), gabor_angle, pixelsPerPeriod, gabor_phase, gabor_contrast);
         
-        sigma=pixelsPerPeriod*gabor_sigma_period;
+        sigma=gabor_sigma_period;
         aperture = GenerateGaussian(gabor_size(1), gabor_size(2), sigma, sigma, 0, 0, 0); % Make Gaussian aperture = Gabors
         TargetShift = TargetGrating + gabor_bgluminance; % Shifts values to around mean luminance
         TargetShift(TargetShift>1)=1; TargetShift(TargetShift<0)=0;
@@ -113,4 +113,31 @@ if expsetup.general.record_plexon==1
     d1_rect = [expsetup.screen.screen_rect(3)-sz1, 1, expsetup.screen.screen_rect(3), sz1]';
     % Rename
     ph_rect=d1_rect;
+end
+
+%% Reward feedback picture
+
+if expsetup.general.human_exp==1
+
+    % Load images
+    a1 = load ('image_correct'); % Load image specified in isntrpic
+    a1 = struct2cell(a1); % Convert to cell for easines of use (no need to access structure fields)
+    tex_positive = Screen('MakeTexture', window, a1{1});
+    tex_positive_background_color = [a1{1}(1,1,1), a1{1}(1,1,2), a1{1}(1,1,3)]; % Matching background color
+    
+    a1 = load ('image_error'); % Load image specified in isntrpic
+    a1 = struct2cell(a1); % Convert to cell for easines of use (no need to access structure fields)
+    tex_negative = Screen('MakeTexture', window, a1{1});
+    tex_negative_background_color = [a1{1}(1,1,1), a1{1}(1,1,2), a1{1}(1,1,3)]; % Matching background color
+    
+    % Center objects at the screen center
+    coord1 = expsetup.stim.esetup_fix_coord(tid,1:2);
+    
+    % Determine image size
+    a = size(a1{1});
+    m = a(2)./expsetup.screen.deg2pix; % Horizontal is dim2
+    n = a(1)./expsetup.screen.deg2pix; % Vertical is dim1
+    sz1 = [0,0,m,n]; % One row one set of coordinates
+    reward_rect = runexp_convert_deg2pix_rect_v10(coord1, sz1); % One column - one object;
+    
 end
