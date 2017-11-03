@@ -33,14 +33,26 @@ global SD
 if isempty(SD)
     initSD();
 else
+    SD.trials(end+1) = SD.trial;
     SD.correct(end+1) = correct;
+    SD.trial = SD.trial + 1;
+    %% save
+    if mod(SD.trial,100)==0
+        disp(sprintf('Saving data'));
+        data = SD;
+        save(fullfile(SD.datafolder,sprintf('data%i.mat',SD.trial)),'data');
+        disp(sprintf('Clearing frames'));
+        SD.trials = [];
+        SD.correct = [];
+        SD.frames = {};
+    end
 end
 
 %% Build a trial
-frames = zeros(32,32,3,140);
+frames = zeros(32,32,3,140,'uint8');
 rr = 14:18;
 
-value = -ones(1,140);
+value = -ones(1,140,'int8');
 
 intervals = [81:90;111:120];
 interval = 1+(rand<.5); % 0 = first interval, 1 = second interval
@@ -105,5 +117,7 @@ SD.colors.grey = [127 127 127];
 SD.colors.white = [255 255 255];
 SD.colors.green = [0 255 0];
 SD.frames = {};
+SD.trials = [];
 SD.correct = [];
 SD.initialized = true;
+SD.datafolder = '~/data/att1/dqn';
