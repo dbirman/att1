@@ -21,7 +21,8 @@ model_config = {
     'trial_length': 140,  # Number of frames in each trial
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 20
+    'LSTM_hidden_size': 20,
+    'learning_rate': 0.001
 }
 
 model_config['LSTM_sequence_length'] = model_config['trial_length'] // model_config['frame_subsample_rate'] 
@@ -82,9 +83,11 @@ class psychophys_model(object):
 
         explore_vals = tf.random_uniform([model_config['LSTM_sequence_length']],
                                           dtype=tf.float32)
+
+        loss = tf.constant(0.)
         
         # recurrence: termination conditions
-        def _recurrence_continues(i, lstm_state, Q_vals, chose_to_release):
+        def _recurrence_continues(i, lstm_state, Q_vals, chose_to_release, loss):
             trial_timeout = tf.equal(i, tf.constant(model_config['LSTM_sequence_length']))
             return tf.logical_not(tf.logical_or(trial_timeout, chose_to_release))
 
@@ -131,24 +134,43 @@ class psychophys_model(object):
                 
             return (i, lstm_state, Q_vals, tf.squeeze(chose_to_release))
 
-        def _loop_body(i, lstm_state, Q_vals, chose_to_release):
+        def _loop_body(i, lstm_state, Q_vals, chose_to_release, loss):
+            prev_Q_vals = Q_vals
             (i, lstm_state, Q_vals, chose_to_release) = _one_frame_forward(
                 i, lstm_state, Q_vals, chose_to_release)
+            # update loss for prev. step if i > 0
+            loss = tf.cond(
+                tf.greater(i, 0),
+                lambda: loss + tf.square(tf.stop_gradient(tf.reduce_max(Q_vals)) - prev_Q_vals[0,0]),
+                lambda: loss)
             i = i + 1
-            return (i, lstm_state, Q_vals, chose_to_release)
+            return (i, lstm_state, Q_vals, chose_to_release, loss)
         
         # recurrence: actually running the loop
-        (i, lstm_state, Q_vals, chose_to_release) = tf.while_loop(
+        (i, lstm_state, Q_vals, chose_to_release, loss) = tf.while_loop(
             _recurrence_continues,
             _loop_body,
-            (i, lstm_state, Q_vals, chose_to_release),
+            (i, lstm_state, Q_vals, chose_to_release, loss),
             swap_memory=True)
+
 
         # Get the reward for the trial -- either reward for releasing now, or
         # -1 if ran out of time
         trial_reward = tf.cond(chose_to_release,
                                lambda: possible_rewards[i],
                                lambda: -1.)
+
+        # if released, update loss with reward difference from release Q, else
+        # reward difference from do-nothing Q
+        loss = tf.cond(
+            chose_to_release,
+            lambda: loss + tf.square(tf.stop_gradient(trial_reward) - Q_vals[0,1]),
+            lambda: loss + tf.square(tf.stop_gradient(trial_reward) - Q_vals[0,0]))
+
+
+        # training
+        optimizer = tf.train.GradientDescentOptimizer(model_config['learning_rate'])
+        train = optimizer.minimize(loss)
 
         
         # Initialize vision network from checkpoint
@@ -159,6 +181,8 @@ class psychophys_model(object):
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
         print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
+        print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
+        self.sess.run(train)
         print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
         print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
             
