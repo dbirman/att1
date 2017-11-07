@@ -20,13 +20,16 @@ import matlab.engine  # Using to run experiment in psychtoolkit or whatever
 
 model_config = {
     'trial_length': 140,  # Number of frames in each trial
-    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
+    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 20,
-    'epsilon': 0.2,  # exploration probability
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'learning_rate': 0.001,
+    'init_epsilon': 0.3,  # exploration probability
+    'epsilon_decay': 0.01,  # additive decay 
+    'epsilon_decays_every': 50,  # number of trials between epsilon decays
+    'min_epsilon': 0.05,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
                                 # will significantly speed up training.
@@ -188,7 +191,6 @@ class psychophys_model(object):
         # training
         optimizer = tf.train.AdamOptimizer(model_config['learning_rate'])
         self.train = optimizer.minimize(loss)
-
         
         # set to initialize vision network from checkpoint
         tf.contrib.framework.init_from_checkpoint(
@@ -202,6 +204,13 @@ class psychophys_model(object):
         # create session and initialize
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
+
+
+        # exploration parameters
+        self.curr_epsilon = model_config['init_epsilon']
+        self.min_epsilon = model_config['min_epsilon']
+        self.epsilon_decay = model_config['epsilon_decay']
+        self.epsilon_decays_every = model_config['epsilon_decays_every']
         
         
     def run_trials(self, num_trials):
@@ -218,8 +227,15 @@ class psychophys_model(object):
                 [self.trial_reward, self.chose_to_release, self.step_trial_ended, self.loss, self.train],
                 feed_dict={self.input_ph: this_input,
                            self.reward_ph: this_value,
-                           self.epsilon_ph: model_config['epsilon']})
+                           self.epsilon_ph: self.curr_epsilon})
+
             print(trial_i, this_reward, this_choice, this_step_ended, this_loss)
+
+            # handle epsilon decay
+            if trial_i % self.epsilon_decays_every == 0 and self.curr_epsilon > self.min_epsilon: 
+                self.curr_epsilon -= self.epsilon_decay
+
+            # pass back result and get next trial
             was_correct = np.asscalar(this_reward) == 1.
             this_trial = self.m_eng.samediff_step(was_correct)
 
@@ -240,7 +256,7 @@ if __name__ == '__main__':
     print('init took %.2f seconds' % (time.time() - t))
     
     t = time.time()
-    num_trials = 5 
+    num_trials = 1000 
     model.run_trials(num_trials)
     print('running %i trials took %.2f seconds' % (num_trials, time.time() - t))
     model.save_parameters()
