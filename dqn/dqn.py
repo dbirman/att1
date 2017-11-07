@@ -20,16 +20,18 @@ import matlab.engine  # Using to run experiment in psychtoolkit or whatever
 
 model_config = {
     'trial_length': 140,  # Number of frames in each trial
-    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
+    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 20,
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'learning_rate': 0.001,
-    'init_epsilon': 0.3,  # exploration probability
+    'save_every': 1000,  # save model every n trials
+    'save_path': '/home/andrew/data/att1/dqn/checkpoint/model.ckpt',  # where to save
+    'init_epsilon': 0.2,  # exploration probability
     'epsilon_decay': 0.01,  # additive decay 
     'epsilon_decays_every': 50,  # number of trials between epsilon decays
-    'min_epsilon': 0.05,
+    'min_epsilon': 0.1,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
                                 # will significantly speed up training.
@@ -200,6 +202,8 @@ class psychophys_model(object):
 
         # saving + restoring
         self.saver = tf.train.Saver()
+        self.save_every = model_config['save_every']
+        self.save_path = model_config['save_path']
         
         # create session and initialize
         self.sess = tf.Session()
@@ -235,17 +239,21 @@ class psychophys_model(object):
             if trial_i % self.epsilon_decays_every == 0 and self.curr_epsilon > self.min_epsilon: 
                 self.curr_epsilon -= self.epsilon_decay
 
+            # save progress
+            if self.save_every is not None and trial_i % self.save_every == 0:
+                model.save_parameters()
+
             # pass back result and get next trial
             was_correct = np.asscalar(this_reward) == 1.
             this_trial = self.m_eng.samediff_step(was_correct)
 
-    def save_parameters(self, path='/home/andrew/data/att1/dqn/checkpoint/model.ckpt'):
-        self.saver.save(self.sess, path)
-        print('Checkpoint saved to ' + path)
+    def save_parameters(self):
+        self.saver.save(self.sess, self.save_path)
+        print('Checkpoint saved to ' + self.save_path)
 
-    def restore_parameters(self, path='/home/andrew/data/att1/dqn/checkpoint/model.ckpt'):
-        self.saver.restore(self.sess, path)
-        print('Restored from ' + path)
+    def restore_parameters(self):
+        self.saver.restore(self.sess, self.save_path)
+        print('Restored from ' + self.save_path)
 
 if __name__ == '__main__':
     t = time.time()
@@ -256,8 +264,8 @@ if __name__ == '__main__':
     print('init took %.2f seconds' % (time.time() - t))
     
     t = time.time()
-    num_trials = 1000 
+    num_trials = 100000 
     model.run_trials(num_trials)
     print('running %i trials took %.2f seconds' % (num_trials, time.time() - t))
-    model.save_parameters()
 
+    model.save_parameters()
