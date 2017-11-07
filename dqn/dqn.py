@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import time
 
 import numpy as np
 import tensorflow as tf
@@ -19,13 +20,16 @@ import matlab.engine  # Using to run experiment in psychtoolkit or whatever
 
 model_config = {
     'trial_length': 140,  # Number of frames in each trial
-    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
+    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 20,
-    'epsilon': 0.1,  # exploration probability
+    'epsilon': 0.2,  # exploration probability
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
-    'learning_rate': 0.001
+    'learning_rate': 0.001,
+    'tune_vision_model': False  # whether to backprop through vision model.
+                                # stopping backprop at the vision model output
+                                # will significantly speed up training.
 }
 
 model_config['LSTM_sequence_length'] = model_config['trial_length'] // model_config['frame_subsample_rate'] 
@@ -113,6 +117,8 @@ class psychophys_model(object):
                 # Flatten and fully-connect to lstm inputs
                 inception_features = slim.flatten(inception_features,
                                                   scope='inception_flattened')
+                if not model_config['tune_vision_model']:
+                    inception_features = tf.stop_gradient(inception_features)
                 lstm_inputs = slim.fully_connected(inception_features,
                                                    model_config['LSTM_hidden_size'],
                                                    activation_fn=tf.nn.relu,
@@ -167,9 +173,9 @@ class psychophys_model(object):
         # Get the reward for the trial -- either reward for releasing now, or
         # -1 if ran out of time
         self.trial_reward = trial_reward = tf.cond(
-            chose_to_release,
+            tf.less(i, tf.constant(model_config['LSTM_sequence_length'])),
             lambda: possible_rewards[i],
-            lambda: [-1.])
+            lambda: tf.constant([-1.]))
 
         # if released, update loss with reward difference from release Q, else
         # reward difference from do-nothing Q
@@ -180,7 +186,7 @@ class psychophys_model(object):
 
 
         # training
-        optimizer = tf.train.GradientDescentOptimizer(model_config['learning_rate'])
+        optimizer = tf.train.AdamOptimizer(model_config['learning_rate'])
         self.train = optimizer.minimize(loss)
 
         
@@ -188,6 +194,10 @@ class psychophys_model(object):
         tf.contrib.framework.init_from_checkpoint(
             model_config['vision_checkpoint_location'],
             {'InceptionV3/': 'InceptionV3/'})
+
+
+        # saving + restoring
+        self.saver = tf.train.Saver()
         
         # create session and initialize
         self.sess = tf.Session()
@@ -213,10 +223,25 @@ class psychophys_model(object):
             was_correct = np.asscalar(this_reward) == 1.
             this_trial = self.m_eng.samediff_step(was_correct)
 
+    def save_parameters(self, path='/home/andrew/data/att1/dqn/checkpoint/model.ckpt'):
+        self.saver.save(self.sess, path)
+        print('Checkpoint saved to ' + path)
+
+    def restore_parameters(self, path='/home/andrew/data/att1/dqn/checkpoint/model.ckpt'):
+        self.saver.restore(self.sess, path)
+        print('Restored from ' + path)
 
 if __name__ == '__main__':
+    t = time.time()
     m_eng = matlab.engine.start_matlab()
     m_eng.cd('..')  # Makes matlab work in the directory containing the
                     # samediff_step function, update as necessary
     model = psychophys_model(model_config, m_eng)
-    model.run_trials(1000)
+    print('init took %.2f seconds' % (time.time() - t))
+    
+    t = time.time()
+    num_trials = 5 
+    model.run_trials(num_trials)
+    print('running %i trials took %.2f seconds' % (num_trials, time.time() - t))
+    model.save_parameters()
+
