@@ -13,6 +13,7 @@ import tensorflow as tf
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.slim.nets import inception
 from tensorflow.contrib.framework import arg_scope
+#from tensorflow.python.client import timeline  # for profiling
 
 import matlab.engine  # Using to run experiment in psychtoolkit or whatever 
                       # Note that this import must occur LAST or things break
@@ -22,10 +23,10 @@ model_config = {
     'trial_length': 140,  # Number of frames in each trial
     'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 20,
+    'LSTM_hidden_size': 50,
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
-    'learning_rate': 0.001,
+    'learning_rate': 0.0005,
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/checkpoint/model.ckpt',  # where to save
     'init_epsilon': 0.2,  # exploration probability
@@ -38,6 +39,11 @@ model_config = {
 }
 
 model_config['LSTM_sequence_length'] = model_config['trial_length'] // model_config['frame_subsample_rate'] 
+
+
+def _matlab_to_numpy(array, shape):
+    """Converts results of matlab calls to numpy arrays efficiently"""
+    return np.array(array._data).reshape(shape, order='F')
 
 
 def _canonical_orientation(array):
@@ -173,6 +179,7 @@ class psychophys_model(object):
         # make available for debugging/evaluating behavior
         self.step_trial_ended = i
         self.chose_to_release = chose_to_release
+        self.final_Q_values = Q_vals
 
 
         # Get the reward for the trial -- either reward for releasing now, or
@@ -199,13 +206,13 @@ class psychophys_model(object):
             model_config['vision_checkpoint_location'],
             {'InceptionV3/': 'InceptionV3/'})
 
-
         # saving + restoring
         self.saver = tf.train.Saver()
         self.save_every = model_config['save_every']
         self.save_path = model_config['save_path']
         
         # create session and initialize
+        self.noop = tf.no_op()
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
 
@@ -221,19 +228,30 @@ class psychophys_model(object):
         this_trial = self.m_eng.samediff_step()
 
         for trial_i in xrange(num_trials):
-            this_input = np.array(this_trial['frames'])
-            this_value = np.array(this_trial['value'])
+            trial_length = model_config['trial_length']
+            im_size = model_config['image_size']
+            this_input = _matlab_to_numpy(this_trial['frames'], shape=[im_size, im_size, 3, trial_length])
+            this_value = _matlab_to_numpy(this_trial['value'], shape=[1, trial_length])
 
             this_input = _canonical_orientation(this_input)
             this_value = _canonical_orientation(this_value)
 
-            this_reward, this_choice, this_step_ended, this_loss, _ = self.sess.run(
-                [self.trial_reward, self.chose_to_release, self.step_trial_ended, self.loss, self.train],
+#            options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)  # Profiling
+#            run_metadata = tf.RunMetadata()
+            
+            this_reward, this_choice, this_step_ended, this_loss, this_Q_vals, _ = self.sess.run(
+                [self.trial_reward, self.chose_to_release, self.step_trial_ended, self.loss, self.final_Q_values, self.train],
+#                options=options, run_metadata=run_metadata,  # Profiling
                 feed_dict={self.input_ph: this_input,
                            self.reward_ph: this_value,
                            self.epsilon_ph: self.curr_epsilon})
 
-            print(trial_i, this_reward, this_choice, this_step_ended, this_loss)
+#            fetched_timeline = timeline.Timeline(run_metadata.step_stats)  # Profiling
+#            chrome_trace = fetched_timeline.generate_chrome_trace_format()
+#            with open('profiling/timeline_%i.json' % trial_i, 'w') as f:
+#                f.write(chrome_trace)
+
+            print(trial_i, this_reward, this_choice, this_step_ended, this_loss, this_Q_vals)
 
             # handle epsilon decay
             if trial_i % self.epsilon_decays_every == 0 and self.curr_epsilon > self.min_epsilon: 
@@ -241,7 +259,8 @@ class psychophys_model(object):
 
             # save progress
             if self.save_every is not None and trial_i % self.save_every == 0:
-                model.save_parameters()
+#                model.save_parameters()
+                pass
 
             # pass back result and get next trial
             was_correct = np.asscalar(this_reward) == 1.
