@@ -22,6 +22,9 @@ model_config = {
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 20,
+    'epsilon': 0.1,  # exploration probability
+    'image_size': 32,  # width/height of input images (assumes square)
+    'discount': 0.95,  # The temporal discount factor 
     'learning_rate': 0.001
 }
 
@@ -44,16 +47,17 @@ class psychophys_model(object):
        for the basic use."""
 
     def __init__(self, model_config, m_eng):
-        example_trial = m_eng.samediff_step()
-        example_input = np.array(example_trial['frames'])
-        example_value = np.array(example_trial['value'])
+        self.m_eng = m_eng
+        self.model_config = model_config
+        trial_length = model_config['trial_length']
+        im_size = model_config['image_size']
+        self.input_ph = input_ph = tf.placeholder(
+            tf.int32, [trial_length, im_size, im_size, 3]) 
 
-        example_input = _canonical_orientation(example_input)
-        example_value = _canonical_orientation(example_value)
+        self.reward_ph = reward_ph = tf.placeholder(
+            tf.float32, [trial_length, 1])
 
-        input_ph = tf.constant(example_input, dtype=tf.int32)  # TODO: switch to real placeholders
-        reward_ph = tf.constant(example_value, dtype=tf.float32)  # TODO: switch to real placeholders
-        epsilon_ph = tf.constant(0.5, dtype=tf.float32)  # TODO: switch to real placeholders
+        self.epsilon_ph = epsilon_ph = tf.placeholder(tf.float32, [])
         
         # Subsample, resize, convert to float & scale to [-1, 1] for inception
         # Note: assumes input values are (ints) in [0, 255]
@@ -139,9 +143,10 @@ class psychophys_model(object):
             (i, lstm_state, Q_vals, chose_to_release) = _one_frame_forward(
                 i, lstm_state, Q_vals, chose_to_release)
             # update loss for prev. step if i > 0
+            discount = model_config['discount']
             loss = tf.cond(
                 tf.greater(i, 0),
-                lambda: loss + tf.square(tf.stop_gradient(tf.reduce_max(Q_vals)) - prev_Q_vals[0,0]),
+                lambda: loss + tf.square(discount * tf.stop_gradient(tf.reduce_max(Q_vals)) - prev_Q_vals[0,0]),
                 lambda: loss)
             i = i + 1
             return (i, lstm_state, Q_vals, chose_to_release, loss)
@@ -154,15 +159,21 @@ class psychophys_model(object):
             swap_memory=True)
 
 
+        # make available for debugging/evaluating behavior
+        self.step_trial_ended = i
+        self.chose_to_release = chose_to_release
+
+
         # Get the reward for the trial -- either reward for releasing now, or
         # -1 if ran out of time
-        trial_reward = tf.cond(chose_to_release,
-                               lambda: possible_rewards[i],
-                               lambda: -1.)
+        self.trial_reward = trial_reward = tf.cond(
+            chose_to_release,
+            lambda: possible_rewards[i],
+            lambda: [-1.])
 
         # if released, update loss with reward difference from release Q, else
         # reward difference from do-nothing Q
-        loss = tf.cond(
+        self.loss = loss = tf.cond(
             chose_to_release,
             lambda: loss + tf.square(tf.stop_gradient(trial_reward) - Q_vals[0,1]),
             lambda: loss + tf.square(tf.stop_gradient(trial_reward) - Q_vals[0,0]))
@@ -170,32 +181,42 @@ class psychophys_model(object):
 
         # training
         optimizer = tf.train.GradientDescentOptimizer(model_config['learning_rate'])
-        train = optimizer.minimize(loss)
+        self.train = optimizer.minimize(loss)
 
         
-        # Initialize vision network from checkpoint
+        # set to initialize vision network from checkpoint
         tf.contrib.framework.init_from_checkpoint(
             model_config['vision_checkpoint_location'],
             {'InceptionV3/': 'InceptionV3/'})
         
+        # create session and initialize
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
-        print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
-        print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
-        self.sess.run(train)
-        print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
-        print(self.sess.run([i, Q_vals, chose_to_release, trial_reward]))
-            
         
         
-        
-        
-        
-        
+    def run_trials(self, num_trials):
+        this_trial = self.m_eng.samediff_step()
+
+        for trial_i in xrange(num_trials):
+            this_input = np.array(this_trial['frames'])
+            this_value = np.array(this_trial['value'])
+
+            this_input = _canonical_orientation(this_input)
+            this_value = _canonical_orientation(this_value)
+
+            this_reward, this_choice, this_step_ended, this_loss, _ = self.sess.run(
+                [self.trial_reward, self.chose_to_release, self.step_trial_ended, self.loss, self.train],
+                feed_dict={self.input_ph: this_input,
+                           self.reward_ph: this_value,
+                           self.epsilon_ph: model_config['epsilon']})
+            print(trial_i, this_reward, this_choice, this_step_ended, this_loss)
+            was_correct = np.asscalar(this_reward) == 1.
+            this_trial = self.m_eng.samediff_step(was_correct)
 
 
 if __name__ == '__main__':
     m_eng = matlab.engine.start_matlab()
     m_eng.cd('..')  # Makes matlab work in the directory containing the
                     # samediff_step function, update as necessary
-    psychophys_model(model_config, m_eng)
+    model = psychophys_model(model_config, m_eng)
+    model.run_trials(1000)
