@@ -40,7 +40,7 @@ else
     if mod(SD.trial,100)==0
         disp(sprintf('Saving data'));
         data = SD;
-        save(fullfile(SD.datafolder,sprintf('data%i.mat',SD.trial)),'data');
+        save(fullfile(SD.datafolder,'samediff',sprintf('data%i.mat',SD.trial)),'data');
         disp(sprintf('Clearing frames'));
         SD.trials = [];
         SD.correct = [];

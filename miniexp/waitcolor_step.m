@@ -34,7 +34,7 @@ else
     if mod(SD.trial,100)==0
         disp(sprintf('Saving data'));
         data = SD;
-        save(fullfile(SD.datafolder,sprintf('data%i.mat',SD.trial)),'data');
+        save(fullfile(SD.datafolder,'waitcolor',sprintf('data%i.mat',SD.trial)),'data');
         disp(sprintf('Clearing frames'));
         SD.trials = [];
         SD.correct = [];
@@ -43,49 +43,21 @@ else
 end
 
 %% Build a trial
-frames = zeros(32,32,3,140,'uint8');
-rr = 14:18;
+numWait = randsample(10:10:50,1);
 
-value = -ones(1,140,'int8');
+frames = zeros(32,32,3,50+numWait,'uint8');
 
-intervals = [81:90;111:120];
-interval = 1+(rand<.5); % 0 = first interval, 1 = second interval
+value = -ones(1,50+numWait,'int8');
 
-value(intervals(interval,:))=1;
-    
-sintervals = [31:40;61:70];
+color1 = randi(5);
+color2 = randi(5);
+colors = fields(SD.colors);
 
-if rand<.5
-    % same trial
-    if rand<.5
-        % both red
-        s1_color = SD.colors.red;
-        s2_color = SD.colors.red;
-    else
-        s1_color = SD.colors.yellow;
-        s2_color = SD.colors.yellow;
-    end
-    r1_color = SD.colors.white;
-    r2_color = SD.colors.green;
-else
-    % different trial
-    if rand<.5
-        % both red
-        s1_color = SD.colors.red;
-        s2_color = SD.colors.yellow;
-    else
-        s1_color = SD.colors.yellow;
-        s2_color = SD.colors.red;
-    end
-    r1_color = SD.colors.green;
-    r2_color = SD.colors.white;
-end
+intervals = {21:(20+numWait),(20+numWait+1):(20+numWait+10)};
 
-flip = [2 1];
-frames(rr,rr,:,sintervals(1,:)) = repmat(reshape(s1_color,1,1,3),length(rr),length(rr),1,length(sintervals(interval,:)));
-frames(rr,rr,:,sintervals(2,:)) = repmat(reshape(s2_color,1,1,3),length(rr),length(rr),1,length(sintervals(interval,:)));
-frames(rr,rr,:,intervals(interval,:)) = repmat(reshape(r1_color,1,1,3),length(rr),length(rr),1,length(intervals(interval,:)));
-frames(rr,rr,:,intervals(flip(interval),:)) = repmat(reshape(r2_color,1,1,3),length(rr),length(rr),1,length(intervals(interval,:)));
+frames(:,:,:,intervals{1}) = repmat(reshape(SD.colors.(colors{color1}),1,1,3),32,32,1,length(intervals{1}));
+frames(:,:,:,intervals{2}) = repmat(reshape(SD.colors.(colors{color2}),1,1,3),32,32,1,length(intervals{2}));
+value(intervals{2})=1;
 
 SD.frames{end+1} = frames;
 
@@ -94,7 +66,7 @@ ret.value = value;
 
 %% test
 % h = figure;
-% for i = 1:140
+% for i = 1:size(frames,4)
 %     title(sprintf('Frame %i',i));
 %     imagesc(squeeze(frames(:,:,:,i)));
 %     pause(.05);

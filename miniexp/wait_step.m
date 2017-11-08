@@ -30,7 +30,7 @@ else
     if mod(SD.trial,100)==0
         disp(sprintf('Saving data'));
         data = SD;
-        save(fullfile(SD.datafolder,sprintf('data%i.mat',SD.trial)),'data');
+        save(fullfile(SD.datafolder,'waitstep',sprintf('data%i.mat',SD.trial)),'data');
         disp(sprintf('Clearing frames'));
         SD.trials = [];
         SD.correct = [];
@@ -40,48 +40,10 @@ end
 
 %% Build a trial
 frames = zeros(32,32,3,50,'uint8');
-rr = 14:18;
 
 value = -ones(1,50,'int8');
 
-intervals = [81:90;111:120];
-interval = 1+(rand<.5); % 0 = first interval, 1 = second interval
-
-value(intervals(interval,:))=1;
-    
-sintervals = [31:40;61:70];
-
-if rand<.5
-    % same trial
-    if rand<.5
-        % both red
-        s1_color = SD.colors.red;
-        s2_color = SD.colors.red;
-    else
-        s1_color = SD.colors.yellow;
-        s2_color = SD.colors.yellow;
-    end
-    r1_color = SD.colors.white;
-    r2_color = SD.colors.green;
-else
-    % different trial
-    if rand<.5
-        % both red
-        s1_color = SD.colors.red;
-        s2_color = SD.colors.yellow;
-    else
-        s1_color = SD.colors.yellow;
-        s2_color = SD.colors.red;
-    end
-    r1_color = SD.colors.green;
-    r2_color = SD.colors.white;
-end
-
-flip = [2 1];
-frames(rr,rr,:,sintervals(1,:)) = repmat(reshape(s1_color,1,1,3),length(rr),length(rr),1,length(sintervals(interval,:)));
-frames(rr,rr,:,sintervals(2,:)) = repmat(reshape(s2_color,1,1,3),length(rr),length(rr),1,length(sintervals(interval,:)));
-frames(rr,rr,:,intervals(interval,:)) = repmat(reshape(r1_color,1,1,3),length(rr),length(rr),1,length(intervals(interval,:)));
-frames(rr,rr,:,intervals(flip(interval),:)) = repmat(reshape(r2_color,1,1,3),length(rr),length(rr),1,length(intervals(interval,:)));
+value(41:50) = 1;
 
 SD.frames{end+1} = frames;
 
