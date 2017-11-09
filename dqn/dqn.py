@@ -20,25 +20,34 @@ import matlab.engine  # Using to run experiment in psychtoolkit or whatever
                       # Matlab sucks even in python
 
 model_config = {
-    'trial_length': 140,  # Number of frames in each trial
+    'trial_length': 50,  # Number of frames in each trial
     'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 50,
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
-    'learning_rate': 0.0005,
+    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
+    'learning_rate': 5e-4,
+    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate_decays_every': 1000,
+    'min_learning_rate': 1e-5,
+    'num_trials': 50000, # How many trials to run
     'save_every': 1000,  # save model every n trials
-    'save_path': '/home/andrew/data/att1/dqn/checkpoint/model.ckpt',  # where to save
+    'save_path': '/home/andrew/data/att1/dqn/temp_model.ckpt',  # where to save/load model checkpoints
+    'task_function_folder': '../miniexp/',  # where the task .m files are
+    'task_function': 'wait_step',
+    'reload': False,  # if true, start by reloading the model
     'init_epsilon': 0.2,  # exploration probability
     'epsilon_decay': 0.01,  # additive decay 
-    'epsilon_decays_every': 50,  # number of trials between epsilon decays
-    'min_epsilon': 0.1,
+    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'min_epsilon': 0.0,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
                                 # will significantly speed up training.
 }
 
-model_config['LSTM_sequence_length'] = model_config['trial_length'] // model_config['frame_subsample_rate'] 
+np.random.seed(0)  # reproducibility
+tf.set_random_seed(0) 
 
 
 def _matlab_to_numpy(array, shape):
@@ -62,6 +71,7 @@ class psychophys_model(object):
        for the basic use."""
 
     def __init__(self, model_config, m_eng):
+        model_config['LSTM_sequence_length'] = model_config['trial_length'] // model_config['frame_subsample_rate'] 
         self.m_eng = m_eng
         self.model_config = model_config
         trial_length = model_config['trial_length']
@@ -198,8 +208,20 @@ class psychophys_model(object):
 
 
         # training
-        optimizer = tf.train.AdamOptimizer(model_config['learning_rate'])
+        if model_config['optimizer'] == 'Adam':
+            optimizer = tf.train.AdamOptimizer(model_config['learning_rate'], epsilon=0.1)
+        elif model_config['optimizer'] == 'SGD':
+            optimizer = tf.train.GradientDescentOptimizer(model_config['learning_rate'])
+        elif model_config['optimizer'] == 'RMSProp':
+            optimizer = tf.train.RMSPropOptimizer(model_config['learning_rate'])
+        else:
+            raise ValueError('Invalid optimizer')
         self.train = optimizer.minimize(loss)
+        
+        self.curr_learning_rate = model_config['learning_rate']
+        self.min_learning_rate = model_config['min_learning_rate']
+        self.learning_rate_decay = model_config['learning_rate_decay']
+        self.learning_rate_decays_every = model_config['learning_rate_decays_every']
         
         # set to initialize vision network from checkpoint
         tf.contrib.framework.init_from_checkpoint(
@@ -212,20 +234,29 @@ class psychophys_model(object):
         self.save_path = model_config['save_path']
         
         # create session and initialize
-        self.noop = tf.no_op()
         self.sess = tf.Session()
         self.sess.run(tf.global_variables_initializer())
 
+        # reload if desired
+        if model_config['reload']:
+            self.restore_parameters()
 
         # exploration parameters
         self.curr_epsilon = model_config['init_epsilon']
         self.min_epsilon = model_config['min_epsilon']
         self.epsilon_decay = model_config['epsilon_decay']
         self.epsilon_decays_every = model_config['epsilon_decays_every']
+
+        # task function
+        self.task_function = model_config['task_function']
         
-        
-    def run_trials(self, num_trials):
-        this_trial = self.m_eng.samediff_step()
+    def run_trials(self, num_trials=None):
+        if num_trials is None:
+            num_trials = model_config['num_trials'] 
+        log_length = 100 # how many trials to aggregate statistics over between reports
+        this_trial = eval('self.m_eng.%s()' % self.task_function)
+        rewards = np.zeros([log_length])
+        losses = np.zeros([log_length])
 
         for trial_i in xrange(num_trials):
             trial_length = model_config['trial_length']
@@ -251,20 +282,31 @@ class psychophys_model(object):
 #            with open('profiling/timeline_%i.json' % trial_i, 'w') as f:
 #                f.write(chrome_trace)
 
-            print(trial_i, this_reward, this_choice, this_step_ended, this_loss, this_Q_vals)
+#            print(trial_i, this_reward, this_choice, this_step_ended, this_loss, this_Q_vals)
+            i_mod = trial_i % log_length
+            rewards[i_mod] = this_reward
+            losses[i_mod] = this_loss
+            if i_mod == log_length-1:
+                print(trial_i, np.mean(rewards), np.mean(losses))
+                rewards = np.zeros([log_length])
+                losses = np.zeros([log_length])
+
 
             # handle epsilon decay
             if trial_i % self.epsilon_decays_every == 0 and self.curr_epsilon > self.min_epsilon: 
                 self.curr_epsilon -= self.epsilon_decay
 
+            # handle learning_rate decay
+            if trial_i % self.learning_rate_decays_every == 0 and self.curr_learning_rate > self.min_learning_rate: 
+                self.curr_learning_rate *= self.learning_rate_decay
+
             # save progress
             if self.save_every is not None and trial_i % self.save_every == 0:
-#                model.save_parameters()
-                pass
+                model.save_parameters()
 
             # pass back result and get next trial
             was_correct = np.asscalar(this_reward) == 1.
-            this_trial = self.m_eng.samediff_step(was_correct)
+            this_trial = eval('self.m_eng.%s(was_correct)' % self.task_function)
 
     def save_parameters(self):
         self.saver.save(self.sess, self.save_path)
@@ -277,14 +319,13 @@ class psychophys_model(object):
 if __name__ == '__main__':
     t = time.time()
     m_eng = matlab.engine.start_matlab()
-    m_eng.cd('..')  # Makes matlab work in the directory containing the
-                    # samediff_step function, update as necessary
+    m_eng.cd(model_config['task_function_folder'])  # Makes matlab work in the directory containing the
+                             # wait_step function, update as necessary
     model = psychophys_model(model_config, m_eng)
     print('init took %.2f seconds' % (time.time() - t))
     
     t = time.time()
-    num_trials = 100000 
-    model.run_trials(num_trials)
-    print('running %i trials took %.2f seconds' % (num_trials, time.time() - t))
+    model.run_trials()
+    print('running %i trials took %.2f seconds' % (model_config['num_trials'], time.time() - t))
 
     model.save_parameters()
