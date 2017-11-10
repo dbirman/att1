@@ -18,7 +18,7 @@ from tensorflow.contrib.framework import arg_scope
 import matlab.engine  # Using to run experiment in psychtoolkit or whatever 
                       # Note that this import must occur LAST or things break
                       # Matlab sucks even in python
-
+# wait step
 model_config = {
     'trial_length': 50,  # Number of frames in each trial
     'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
@@ -33,7 +33,7 @@ model_config = {
     'min_learning_rate': 1e-5,
     'num_trials': 50000, # How many trials to run
     'save_every': 1000,  # save model every n trials
-    'save_path': '/home/andrew/data/att1/dqn/temp_model.ckpt',  # where to save/load model checkpoints
+    'save_path': '/home/andrew/data/att1/dqn/waitstep/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'wait_step',
     'reload': False,  # if true, start by reloading the model
@@ -41,6 +41,34 @@ model_config = {
     'epsilon_decay': 0.01,  # additive decay 
     'epsilon_decays_every': 1000,  # number of trials between epsilon decays
     'min_epsilon': 0.0,
+    'tune_vision_model': False  # whether to backprop through vision model.
+                                # stopping backprop at the vision model output
+                                # will significantly speed up training.
+}
+
+# 
+model_config = {
+    'trial_length': 50,  # Number of frames in each trial
+    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
+    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
+    'LSTM_hidden_size': 50,
+    'image_size': 32,  # width/height of input images (assumes square)
+    'discount': 0.95,  # The temporal discount factor 
+    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
+    'learning_rate': 5e-4,
+    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate_decays_every': 1000,
+    'min_learning_rate': 1e-5,
+    'num_trials': 50000, # How many trials to run
+    'save_every': 1000,  # save model every n trials
+    'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
+    'task_function_folder': '../miniexp/',  # where the task .m files are
+    'task_function': 'wait_step',
+    'reload': True,  # if true, start by reloading the model
+    'init_epsilon': 0.2,  # exploration probability
+    'epsilon_decay': 0.01,  # additive decay 
+    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'min_epsilon': 0.05,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
                                 # will significantly speed up training.
