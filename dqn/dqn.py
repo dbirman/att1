@@ -63,7 +63,7 @@ model_config = {
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
-    'task_function': 'wait_step',
+    'task_function': 'waitcolor_step',
     'reload': True,  # if true, start by reloading the model
     'init_epsilon': 0.2,  # exploration probability
     'epsilon_decay': 0.01,  # additive decay 
