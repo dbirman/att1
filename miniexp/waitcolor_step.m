@@ -5,7 +5,7 @@ function ret = waitcolor_step( correct )
 %       20 frames: blank
 %       X frames: color1
 %       10 frames: color2
-%       20 frames: blank
+%       Z frames: blank (where 100-X-30 = Z)
 %
 %   Color 1 and color 2 are two different colors. The agent is supposed to
 %   learn to press when color1 switches to color 2. X takes a random value
@@ -45,9 +45,9 @@ end
 %% Build a trial
 numWait = randsample(10:10:50,1);
 
-frames = zeros(32,32,3,50+numWait,'uint8');
+frames = zeros(32,32,3,100,'uint8');
 
-value = -ones(1,50+numWait,'int8');
+value = -ones(1,100,'int8');
 
 color1 = randi(5);
 color2 = randi(5);
