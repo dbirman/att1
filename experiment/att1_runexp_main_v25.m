@@ -1,15 +1,18 @@
+
 % Script running main experiment file. Initializes and closes all devices.
 % V2.1 Update as of May 16, 2017
 % V2.2 July 15, 2017: Improved compatability with new framework
 % V2.3 August 19, 2017: Finished compatibility with new framework
 % V2.4 August 23, 2017: Added helper functions folder to the path
+% V2.5 October 28, 2017: renamed _settings file into _runexp_settings (to
+% distingish from analysis_settings)
 
 
 close all;
 clear all;
 clc;
 
-fprintf ('\nRun experiment file used is V2.4, update as of August 23, 2017\n\n')
+fprintf ('\nRun experiment file used is V2.5, update as of October 25, 2017\n\n')
  
 global expsetup
 global ni
@@ -19,7 +22,7 @@ global ni
 expsetup.general.expname = 'att1'; 
 expsetup.general.exp_location = 'dan'; % 'dj'; 'mbox'; 'dan'; 'edoras'; 'citadel';
 expsetup.general.debug = 0; % 0: no debugging; 1: reward off, eyelink off; 2: reward off, eyelink off, display transparent
-expsetup.general.human_exp = 1; % 1 - human; 2 - monkey
+expsetup.general.human_exp = 0; % 1 - human; 2 - monkey
 
 % Devices and routines
 expsetup.general.record_plexon = 0;  % 0 - no recording; 1 - yes recording;
@@ -96,7 +99,7 @@ elseif expsetup.general.debug==2
     expsetup.general.recordeyes = 0; % 0 - no recording; 1 - yes recording; 2 - ask experimenter
 end
 
-expsetup.general.code_settings = sprintf('%s_settings', expsetup.general.expname); % Path to file containing trial settings
+expsetup.general.code_settings = sprintf('%s_runexp_settings', expsetup.general.expname); % Path to file containing trial settings
 expsetup.general.code_trial = sprintf('%s_trial', expsetup.general.expname); % Path to file containing trial presentation
 
 
