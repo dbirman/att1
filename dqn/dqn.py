@@ -21,25 +21,26 @@ import matlab.engine  # Using to run experiment in psychtoolkit or whatever
 # wait step
 model_config = {
     'trial_length': 50,  # Number of frames in each trial
-    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
+    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 50,
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
     'learning_rate': 5e-4,
-    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate_decay': 0.95,  # multiplicative decay
     'learning_rate_decays_every': 1000,
+    'max_grad_norm': 5,  # gradients will be clipped to this max global norm if it is not None
     'min_learning_rate': 1e-5,
-    'num_trials': 50000, # How many trials to run
+    'num_trials': 15000, # How many trials to run
     'save_every': 1000,  # save model every n trials
-    'save_path': '/home/andrew/data/att1/dqn/waitstep/model.ckpt',  # where to save/load model checkpoints
+    'save_path': '/home/andrew/data/att1/dqn/waitstep/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'wait_step',
     'reload': False,  # if true, start by reloading the model
     'init_epsilon': 0.2,  # exploration probability
     'epsilon_decay': 0.01,  # additive decay 
-    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'epsilon_decays_every': 500,  # number of trials between epsilon decays
     'min_epsilon': 0.0,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
@@ -47,32 +48,33 @@ model_config = {
 }
 
 # 
-model_config = {
-    'trial_length': 50,  # Number of frames in each trial
-    'frame_subsample_rate': 10,  # Sample every kth frame, to make inputs shorter
-    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 50,
-    'image_size': 32,  # width/height of input images (assumes square)
-    'discount': 0.95,  # The temporal discount factor 
-    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
-    'learning_rate': 5e-4,
-    'learning_rate_decay': 0.9,  # multiplicative decay
-    'learning_rate_decays_every': 1000,
-    'min_learning_rate': 1e-5,
-    'num_trials': 50000, # How many trials to run
-    'save_every': 1000,  # save model every n trials
-    'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
-    'task_function_folder': '../miniexp/',  # where the task .m files are
-    'task_function': 'waitcolor_step',
-    'reload': True,  # if true, start by reloading the model
-    'init_epsilon': 0.2,  # exploration probability
-    'epsilon_decay': 0.01,  # additive decay 
-    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
-    'min_epsilon': 0.05,
-    'tune_vision_model': False  # whether to backprop through vision model.
-                                # stopping backprop at the vision model output
-                                # will significantly speed up training.
-}
+#model_config = {
+#    'trial_length': 100,  # Number of frames in each trial
+#    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
+#    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
+#    'LSTM_hidden_size': 50,
+#    'image_size': 32,  # width/height of input images (assumes square)
+#    'discount': 0.95,  # The temporal discount factor 
+#    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
+#    'learning_rate': 5e-4,
+#    'learning_rate_decay': 0.95,  # multiplicative decay
+#    'learning_rate_decays_every': 1000,
+#    'max_grad_norm': 5,  # gradients will be clipped to this max global norm if it is not None
+#    'min_learning_rate': 1e-5,
+#    'num_trials': 50000, # How many trials to run
+#    'save_every': 1000,  # save model every n trials
+#    'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
+#    'task_function_folder': '../miniexp/',  # where the task .m files are
+#    'task_function': 'waitcolor_step',
+#    'reload': True,  # if true, start by reloading the model
+#    'init_epsilon': 0.2,  # exploration probability
+#    'epsilon_decay': 0.01,  # additive decay 
+#    'epsilon_decays_every': 500,  # number of trials between epsilon decays
+#    'min_epsilon': 0.05,
+#    'tune_vision_model': False  # whether to backprop through vision model.
+#                                # stopping backprop at the vision model output
+#                                # will significantly speed up training.
+#}
 
 np.random.seed(0)  # reproducibility
 tf.set_random_seed(0) 
@@ -244,7 +246,15 @@ class psychophys_model(object):
             optimizer = tf.train.RMSPropOptimizer(model_config['learning_rate'])
         else:
             raise ValueError('Invalid optimizer')
-        self.train = optimizer.minimize(loss)
+
+        if model_config['max_grad_norm'] is None:
+            self.train = optimizer.minimize(loss)
+        else: # Gradient clipping
+            grads_and_vars = optimizer.compute_gradients(loss) 
+            gradients = [g for (g, _) in grads_and_vars]
+            variables = [v for (_, v) in grads_and_vars]
+            clipped_grads_and_vars = zip(tf.clip_by_global_norm(gradients, model_config['max_grad_norm'])[0], variables) 
+            self.train = optimizer.apply_gradients(clipped_grads_and_vars)
         
         self.curr_learning_rate = model_config['learning_rate']
         self.min_learning_rate = model_config['min_learning_rate']
