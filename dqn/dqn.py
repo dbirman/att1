@@ -24,57 +24,89 @@ model_config = {
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
     'LSTM_hidden_size': 50,
+#    'LSTM_num_layers': 3, # the number of recurrent layers
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
-    'learning_rate': 5e-4,
-    'learning_rate_decay': 0.95,  # multiplicative decay
-    'learning_rate_decays_every': 1000,
-    'max_grad_norm': 5,  # gradients will be clipped to this max global norm if it is not None
+    'learning_rate': 1e-3,
+    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate_decays_every': 500,
+    'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
     'min_learning_rate': 1e-5,
-    'num_trials': 15000, # How many trials to run
+    'num_trials': 10000, # How many trials to run
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/waitstep/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'wait_step',
     'reload': False,  # if true, start by reloading the model
-    'init_epsilon': 0.2,  # exploration probability
-    'epsilon_decay': 0.01,  # additive decay 
-    'epsilon_decays_every': 500,  # number of trials between epsilon decays
-    'min_epsilon': 0.0,
+    'init_epsilon': 0.15,  # exploration probability
+    'epsilon_decay': 0.02,  # additive decay 
+    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'min_epsilon': 0.02,
     'tune_vision_model': False  # whether to backprop through vision model.
                                 # stopping backprop at the vision model output
                                 # will significantly speed up training.
 }
 
-# 
-#model_config = {
-#    'trial_length': 100,  # Number of frames in each trial
-#    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
-#    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-#    'LSTM_hidden_size': 50,
-#    'image_size': 32,  # width/height of input images (assumes square)
-#    'discount': 0.95,  # The temporal discount factor 
-#    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
-#    'learning_rate': 5e-4,
-#    'learning_rate_decay': 0.95,  # multiplicative decay
-#    'learning_rate_decays_every': 1000,
-#    'max_grad_norm': 5,  # gradients will be clipped to this max global norm if it is not None
-#    'min_learning_rate': 1e-5,
-#    'num_trials': 50000, # How many trials to run
-#    'save_every': 1000,  # save model every n trials
-#    'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
-#    'task_function_folder': '../miniexp/',  # where the task .m files are
-#    'task_function': 'waitcolor_step',
-#    'reload': True,  # if true, start by reloading the model
-#    'init_epsilon': 0.2,  # exploration probability
-#    'epsilon_decay': 0.01,  # additive decay 
-#    'epsilon_decays_every': 500,  # number of trials between epsilon decays
-#    'min_epsilon': 0.05,
-#    'tune_vision_model': False  # whether to backprop through vision model.
-#                                # stopping backprop at the vision model output
-#                                # will significantly speed up training.
-#}
+# wait color 
+model_config = {
+    'trial_length': 100,  # Number of frames in each trial
+    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
+    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
+    'LSTM_hidden_size': 50,
+#    'LSTM_num_layers': 3, # the number of recurrent layers
+    'image_size': 32,  # width/height of input images (assumes square)
+    'discount': 0.95,  # The temporal discount factor 
+    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
+    'learning_rate': 1e-4,
+    'learning_rate_decay': 0.95,  # multiplicative decay
+    'learning_rate_decays_every': 2000,
+    'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
+    'min_learning_rate': 2e-6,
+    'num_trials': 50000, # How many trials to run
+    'save_every': 1000,  # save model every n trials
+    'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
+    'task_function_folder': '../miniexp/',  # where the task .m files are
+    'task_function': 'waitcolor_step',
+    'reload': True,  # if true, start by reloading the model
+    'init_epsilon': 0.15,  # exploration probability
+    'epsilon_decay': 0.0033,  # additive decay 
+    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'min_epsilon': 0.02,
+    'tune_vision_model': False  # whether to backprop through vision model.
+                                # stopping backprop at the vision model output
+                                # will significantly speed up training.
+}
+
+# same-diff 
+model_config = {
+    'trial_length': 140,  # Number of frames in each trial
+    'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
+    'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
+    'LSTM_hidden_size': 50,
+    'LSTM_num_layers': 3, # the number of recurrent layers
+    'image_size': 32,  # width/height of input images (assumes square)
+    'discount': 0.95,  # The temporal discount factor 
+    'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
+    'learning_rate': 3e-4,
+    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate_decays_every': 500,
+    'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
+    'min_learning_rate': 5e-6,
+    'num_trials': 70000, # How many trials to run
+    'save_every': 1000,  # save model every n trials
+    'save_path': '/home/andrew/data/att1/dqn/samediff/checkpoint/model.ckpt',  # where to save/load model checkpoints
+    'task_function_folder': '../miniexp/',  # where the task .m files are
+    'task_function': 'samediff_step',
+    'reload': False,  # if true, start by reloading the model
+    'init_epsilon': 0.1,  # exploration probability
+    'epsilon_decay': 0.0033,  # additive decay 
+    'epsilon_decays_every': 1000,  # number of trials between epsilon decays
+    'min_epsilon': 0.02,
+    'tune_vision_model': False  # whether to backprop through vision model.
+                                # stopping backprop at the vision model output
+                                # will significantly speed up training.
+}
 
 np.random.seed(0)  # reproducibility
 tf.set_random_seed(0) 
@@ -129,10 +161,12 @@ class psychophys_model(object):
         # recurrence: init variables
         i = tf.constant(0, dtype=tf.int32)  # loop index
 
-        lstm_cell = tf.contrib.rnn.BasicLSTMCell(
+        lstm_cell_gen = lambda: tf.contrib.rnn.BasicLSTMCell(
             model_config['LSTM_hidden_size'],
             forget_bias=1.0,
             state_is_tuple=True)
+
+        lstm_cell = tf.contrib.rnn.MultiRNNCell([lstm_cell_gen() for _ in range(model_config['LSTM_num_layers'])])
 
         lstm_state = lstm_cell.zero_state(1, tf.float32)
 
@@ -239,11 +273,13 @@ class psychophys_model(object):
 
         # training
         if model_config['optimizer'] == 'Adam':
-            optimizer = tf.train.AdamOptimizer(model_config['learning_rate'], epsilon=0.1)
+            optimizer = tf.train.AdamOptimizer(model_config['learning_rate'], epsilon=0.01)
         elif model_config['optimizer'] == 'SGD':
             optimizer = tf.train.GradientDescentOptimizer(model_config['learning_rate'])
         elif model_config['optimizer'] == 'RMSProp':
             optimizer = tf.train.RMSPropOptimizer(model_config['learning_rate'])
+        elif model_config['optimizer'] == 'Adadelta':
+            optimizer = tf.train.AdadeltaOptimizer(model_config['learning_rate'])
         else:
             raise ValueError('Invalid optimizer')
 
