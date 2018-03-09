@@ -90,17 +90,17 @@ model_config = {
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
     'learning_rate': 3e-4,
     'learning_rate_decay': 0.9,  # multiplicative decay
-    'learning_rate_decays_every': 500,
+    'learning_rate_decays_every': 1000,
     'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
-    'min_learning_rate': 5e-6,
-    'num_trials': 70000, # How many trials to run
+    'min_learning_rate': 2e-6,
+    'num_trials': 30000, # How many trials to run
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/samediff/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'samediff_step',
     'reload': False,  # if true, start by reloading the model
     'init_epsilon': 0.1,  # exploration probability
-    'epsilon_decay': 0.0033,  # additive decay 
+    'epsilon_decay': 0.005,  # additive decay 
     'epsilon_decays_every': 1000,  # number of trials between epsilon decays
     'min_epsilon': 0.02,
     'tune_vision_model': False  # whether to backprop through vision model.
