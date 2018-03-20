@@ -23,24 +23,24 @@ model_config = {
     'trial_length': 50,  # Number of frames in each trial
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 50,
-#    'LSTM_num_layers': 3, # the number of recurrent layers
+    'LSTM_hidden_size': 100,
+    'LSTM_num_layers': 3, # the number of recurrent layers
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
-    'learning_rate': 1e-3,
-    'learning_rate_decay': 0.9,  # multiplicative decay
+    'learning_rate': 1e-4,
+    'learning_rate_decay': 0.85,  # multiplicative decay
     'learning_rate_decays_every': 500,
     'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
-    'min_learning_rate': 1e-5,
-    'num_trials': 10000, # How many trials to run
+    'min_learning_rate': 2e-6,
+    'num_trials': 40000, # How many trials to run
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/waitstep/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'wait_step',
     'reload': False,  # if true, start by reloading the model
-    'init_epsilon': 0.15,  # exploration probability
-    'epsilon_decay': 0.02,  # additive decay 
+    'init_epsilon': 0.1,  # exploration probability
+    'epsilon_decay': 0.005,  # additive decay 
     'epsilon_decays_every': 1000,  # number of trials between epsilon decays
     'min_epsilon': 0.02,
     'tune_vision_model': False  # whether to backprop through vision model.
@@ -53,24 +53,24 @@ model_config = {
     'trial_length': 100,  # Number of frames in each trial
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 50,
-#    'LSTM_num_layers': 3, # the number of recurrent layers
+    'LSTM_hidden_size': 100,
+    'LSTM_num_layers': 3, # the number of recurrent layers
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
     'learning_rate': 1e-4,
-    'learning_rate_decay': 0.95,  # multiplicative decay
-    'learning_rate_decays_every': 2000,
+    'learning_rate_decay': 0.85,  # multiplicative decay
+    'learning_rate_decays_every': 500,
     'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
     'min_learning_rate': 2e-6,
-    'num_trials': 50000, # How many trials to run
+    'num_trials': 40000, # How many trials to run
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/waitcolor/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
     'task_function': 'waitcolor_step',
-    'reload': True,  # if true, start by reloading the model
-    'init_epsilon': 0.15,  # exploration probability
-    'epsilon_decay': 0.0033,  # additive decay 
+    'reload': False,  # if true, start by reloading the model
+    'init_epsilon': 0.1,  # exploration probability
+    'epsilon_decay': 0.005,  # additive decay 
     'epsilon_decays_every': 1000,  # number of trials between epsilon decays
     'min_epsilon': 0.02,
     'tune_vision_model': False  # whether to backprop through vision model.
@@ -83,17 +83,17 @@ model_config = {
     'trial_length': 140,  # Number of frames in each trial
     'frame_subsample_rate': 5,  # Sample every kth frame, to make inputs shorter
     'vision_checkpoint_location': './inception_v3.ckpt',  # Obtained from http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz
-    'LSTM_hidden_size': 50,
+    'LSTM_hidden_size': 100,
     'LSTM_num_layers': 3, # the number of recurrent layers
     'image_size': 32,  # width/height of input images (assumes square)
     'discount': 0.95,  # The temporal discount factor 
     'optimizer': 'RMSProp',  # One of 'Adam' or 'SGD' or 'RMSProp'
-    'learning_rate': 3e-4,
-    'learning_rate_decay': 0.9,  # multiplicative decay
-    'learning_rate_decays_every': 1000,
+    'learning_rate': 1e-4,
+    'learning_rate_decay': 0.85,  # multiplicative decay
+    'learning_rate_decays_every': 500,
     'max_grad_norm': None,  # gradients will be clipped to this max global norm if it is not None
     'min_learning_rate': 2e-6,
-    'num_trials': 30000, # How many trials to run
+    'num_trials': 40000, # How many trials to run
     'save_every': 1000,  # save model every n trials
     'save_path': '/home/andrew/data/att1/dqn/samediff/checkpoint/model.ckpt',  # where to save/load model checkpoints
     'task_function_folder': '../miniexp/',  # where the task .m files are
